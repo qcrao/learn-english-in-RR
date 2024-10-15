@@ -1,5 +1,6 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faVolumeUp } from "@fortawesome/free-solid-svg-icons";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { SpeechIcon } from './SpeechIcon';
 
 export let defaultModel;
 export let apiKey;
@@ -38,34 +39,29 @@ export function initPanelConfig(extensionAPI) {
 function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
 
-  console.log(highlights);
-
   highlights.forEach((highlight) => {
-    // 检查是否已经添加了图标
     if (
       highlight.nextElementSibling &&
-      highlight.nextElementSibling.classList.contains("speech-icon")
+      highlight.nextElementSibling.classList.contains("speech-icon-container")
     ) {
-      console.log("已经添加了图标");
       return;
     }
 
-    const speechIcon = document.createElement("span");
-    speechIcon.className = "speech-icon";
-    speechIcon.innerHTML = `<FontAwesomeIcon icon={faVolumeUp} />`;
-    speechIcon.style.marginLeft = "5px";
-    speechIcon.style.cursor = "pointer";
-
     const text = highlight.textContent;
+    const iconContainer = document.createElement('span');
+    iconContainer.className = 'speech-icon-container';
 
-    speechIcon.addEventListener("mouseover", () => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      speechSynthesis.speak(utterance);
-    });
+    ReactDOM.render(
+      <SpeechIcon
+        onClick={() => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          speechSynthesis.speak(utterance);
+        }}
+      />,
+      iconContainer
+    );
 
-    console.log("speechIcon", speechIcon);
-
-    highlight.insertAdjacentElement("afterend", speechIcon);
+    highlight.insertAdjacentElement("afterend", iconContainer);
   });
 }
 
@@ -79,11 +75,11 @@ async function onload({ extensionAPI }) {
   addSpeechIconToHighlights();
 
   // 监听页面变化,以处理动态加载的内容
-  const observer = new MutationObserver(() => {
-    addSpeechIconToHighlights();
-  });
+  // const observer = new MutationObserver(() => {
+  //   addSpeechIconToHighlights();
+  // });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  // observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function onunload() {

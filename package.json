@@ -18,8 +18,8 @@
     "js-tiktoken": "^1.0.12",
     "lamejs": "zhuker/lamejs",
     "openai": "^4.19.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "roamjs-scripts": "^0.27.0"
   },
   "devDependencies": {
