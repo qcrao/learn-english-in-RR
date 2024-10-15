@@ -1,4 +1,5 @@
 export let defaultModel;
+export let apiKey;
 
 export function initPanelConfig(extensionAPI) {
   return {
@@ -12,7 +13,18 @@ export function initPanelConfig(extensionAPI) {
           type: "select",
           items: ["OpenAI", "GitHub"],
           onChange: (value) => {
-            console.log(value);
+            defaultModel = value;
+          },
+        },
+      },
+      {
+        id: "api-key",
+        name: "API Key",
+        description: "Enter your API key",
+        action: {
+          type: "input",
+          onChange: (value) => {
+            apiKey = value;
           },
         },
       },
@@ -21,7 +33,7 @@ export function initPanelConfig(extensionAPI) {
 }
 
 async function onload({ extensionAPI, ...rest }) {
-  console.log("Loaded learn english in roam");
+  console.log("Loaded Learn-English-in-RR in roam");
 
   const panelConfig = initPanelConfig(extensionAPI);
 
@@ -29,7 +41,7 @@ async function onload({ extensionAPI, ...rest }) {
 }
 
 function onunload() {
-  console.log("Unloaded learn english in roam");
+  console.log("Unloaded Learn-English-in-RR in roam");
 }
 
 export default {
