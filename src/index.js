@@ -40,6 +40,7 @@ function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
 
   highlights.forEach((highlight) => {
+    // 检查是否已经添加了语音图标
     if (
       highlight.nextElementSibling &&
       highlight.nextElementSibling.classList.contains("speech-icon-container")
@@ -51,37 +52,28 @@ function addSpeechIconToHighlights() {
     const iconContainer = document.createElement("span");
     iconContainer.className = "speech-icon-container";
 
-    // 为高亮文本添加鼠标悬停事件
-    highlight.addEventListener("mouseenter", () => {
+    // 创建一个函数来处理朗读
+    const speakText = () => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 0.8;
       speechSynthesis.cancel();
       speechSynthesis.speak(utterance);
-    });
+    };
 
-    highlight.addEventListener("mouseleave", () => {
-      speechSynthesis.cancel();
-    });
+    // 为高亮文本添加鼠标悬停事件
+    highlight.addEventListener("mouseenter", speakText);
+    highlight.addEventListener("mouseleave", () => speechSynthesis.cancel());
 
-    ReactDOM.render(
-      <SpeechIcon
-        onClick={() => {
-          const utterance = new SpeechSynthesisUtterance(text);
-          speechSynthesis.speak(utterance);
-        }}
-        onMouseEnter={() => {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = 0.8;
-          speechSynthesis.cancel();
-          speechSynthesis.speak(utterance);
-        }}
-        onMouseLeave={() => {
-          speechSynthesis.cancel();
-        }}
-      />,
-      iconContainer
-    );
+    // 使用函数组件和 React.createElement 替代 ReactDOM.render
+    const SpeechIconComponent = () => {
+      return React.createElement(SpeechIcon, {
+        onClick: speakText,
+        onMouseEnter: speakText,
+        onMouseLeave: () => speechSynthesis.cancel()
+      });
+    };
 
+    ReactDOM.render(React.createElement(SpeechIconComponent), iconContainer);
     highlight.insertAdjacentElement("afterend", iconContainer);
   });
 }
