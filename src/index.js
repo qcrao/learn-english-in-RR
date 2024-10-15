@@ -1,6 +1,6 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { SpeechIcon } from './SpeechIcon';
+import React from "react";
+import ReactDOM from "react-dom";
+import { SpeechIcon } from "./SpeechIcon";
 
 export let defaultModel;
 export let apiKey;
@@ -48,8 +48,8 @@ function addSpeechIconToHighlights() {
     }
 
     const text = highlight.textContent;
-    const iconContainer = document.createElement('span');
-    iconContainer.className = 'speech-icon-container';
+    const iconContainer = document.createElement("span");
+    iconContainer.className = "speech-icon-container";
 
     ReactDOM.render(
       <SpeechIcon
@@ -74,12 +74,25 @@ async function onload({ extensionAPI }) {
   // 在页面加载完成后调用函数
   addSpeechIconToHighlights();
 
-  // 监听页面变化,以处理动态加载的内容
-  // const observer = new MutationObserver(() => {
-  //   addSpeechIconToHighlights();
-  // });
+  let debounceTimer;
+  const observer = new MutationObserver((mutations) => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const hasRelevantChanges = mutations.some((mutation) =>
+        Array.from(mutation.addedNodes).some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            (node.classList.contains("rm-highlight") ||
+              node.querySelector(".rm-highlight"))
+        )
+      );
+      if (hasRelevantChanges) {
+        addSpeechIconToHighlights();
+      }
+    }, 500);
+  });
 
-  // observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function onunload() {
