@@ -69,7 +69,7 @@ function addSpeechIconToHighlights() {
       return React.createElement(SpeechIcon, {
         onClick: speakText,
         onMouseEnter: speakText,
-        onMouseLeave: () => speechSynthesis.cancel()
+        onMouseLeave: () => speechSynthesis.cancel(),
       });
     };
 
