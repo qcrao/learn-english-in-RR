@@ -51,11 +51,32 @@ function addSpeechIconToHighlights() {
     const iconContainer = document.createElement("span");
     iconContainer.className = "speech-icon-container";
 
+    // 为高亮文本添加鼠标悬停事件
+    highlight.addEventListener("mouseenter", () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+    });
+
+    highlight.addEventListener("mouseleave", () => {
+      speechSynthesis.cancel();
+    });
+
     ReactDOM.render(
       <SpeechIcon
         onClick={() => {
           const utterance = new SpeechSynthesisUtterance(text);
           speechSynthesis.speak(utterance);
+        }}
+        onMouseEnter={() => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.8;
+          speechSynthesis.cancel();
+          speechSynthesis.speak(utterance);
+        }}
+        onMouseLeave={() => {
+          speechSynthesis.cancel();
         }}
       />,
       iconContainer
