@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "watch": "nodemon --watch src --ext js,jsx,ts,tsx,css,scss,json --exec 'sh build.sh'"
   },
   "keywords": [],
   "author": "",
@@ -21,5 +21,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "roamjs-scripts": "^0.27.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
   }
 }

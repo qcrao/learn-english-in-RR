@@ -1,9 +1,7 @@
 export let defaultModel;
 
-async function onload({ extensionAPI, ...rest }) {
-  console.log("Loaded learn english in roam");
-
-  const panelConfig = {
+export function initPanelConfig(extensionAPI) {
+  return {
     tabTitle: "Learn English in RR",
     settings: [
       {
@@ -20,6 +18,12 @@ async function onload({ extensionAPI, ...rest }) {
       },
     ],
   };
+}
+
+async function onload({ extensionAPI, ...rest }) {
+  console.log("Loaded learn english in roam");
+
+  const panelConfig = initPanelConfig(extensionAPI);
 
   await extensionAPI.settings.panel.create(panelConfig);
 }
