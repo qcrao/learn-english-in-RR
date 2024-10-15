@@ -1,0 +1,25 @@
+{
+  "name": "learn-english-in-rr",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.17.1",
+    "@blueprintjs/core": "^5.9.1",
+    "@fortawesome/free-solid-svg-icons": "^6.4.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "axios": "^0.28.0",
+    "js-tiktoken": "^1.0.12",
+    "lamejs": "zhuker/lamejs",
+    "openai": "^4.19.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "roamjs-scripts": "^0.27.0"
+  }
+}
