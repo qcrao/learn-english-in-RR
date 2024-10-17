@@ -1,5 +1,6 @@
 export let defaultModel;
 export let apiKey;
+export let selectedVoiceName = "Nicky";
 
 export function initPanelConfig(extensionAPI) {
   return {
@@ -28,7 +29,22 @@ export function initPanelConfig(extensionAPI) {
           },
         },
       },
+      {
+        id: "voice-selection",
+        name: "Voice",
+        description: "Select the preferred voice",
+        action: {
+          type: "select",
+          items: ["Nicky", "Aaron", "Daniel", "Junior"],
+          onChange: (value) => {
+            if (value === "Daniel") {
+              selectedVoiceName = "Daniel (English (United Kingdom))";
+            } else {
+              selectedVoiceName = value;
+            }
+          },
+        },
+      },
     ],
   };
 }
-
