@@ -7,10 +7,13 @@ export const speakText = (text) => {
   // Get available voices
   const voices = speechSynthesis.getVoices();
 
+  // if selectedVoiceName is not found, use Nicky
+  if (!selectedVoiceName) {
+    selectedVoiceName = "Nicky";
+  }
+
   // Select the specified voice
-  let selectedVoice = voices.find(
-    (voice) => voice.name === selectedVoiceName
-  );
+  let selectedVoice = voices.find((voice) => voice.name === selectedVoiceName);
 
   // If the specified voice is found, use it
   if (!selectedVoice) {
@@ -23,4 +26,3 @@ export const speakText = (text) => {
   speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 };
-
