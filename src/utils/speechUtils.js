@@ -1,4 +1,4 @@
-import { selectedVoiceName } from "./config";
+import { selectedVoiceName } from "../config";
 
 export const speakText = (text) => {
   const utterance = new SpeechSynthesisUtterance(text);

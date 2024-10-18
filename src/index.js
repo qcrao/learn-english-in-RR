@@ -7,7 +7,8 @@ import {
   apiKey,
   selectedVoiceName,
 } from "./config";
-import { speakText } from "./speechUtils";
+import { speakText } from "./utils/speechUtils";
+import { loadRoamExtensionCommands } from "./utils/commands";
 
 function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
@@ -52,9 +53,9 @@ async function onload({ extensionAPI }) {
   const panelConfig = initPanelConfig(extensionAPI);
   await extensionAPI.settings.panel.create(panelConfig);
 
+  loadRoamExtensionCommands(extensionAPI);
+
   // 在页面加载完后调用函数
-  console.log("selectedVoiceName", selectedVoiceName);
-  console.log("addSpeechIconToHighlights");
   addSpeechIconToHighlights();
 
   let debounceTimer;
