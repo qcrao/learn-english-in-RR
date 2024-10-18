@@ -1,8 +1,18 @@
+import { systemPrompt } from "../systemPrompt";
+import { initializeOpenAIAPI } from "./ai/commands";
+import OpenAI from "openai";
+
 export let defaultModel;
 export let apiKey;
 export let selectedVoiceName = "Nicky";
+export let OPENAI_API_KEY = "";
+export let isResponseToSplit;
+export let streamResponse;
+
+export let openaiLibrary;
 
 export function initPanelConfig(extensionAPI) {
+  console.log(systemPrompt);
   return {
     tabTitle: "Learn English in RR",
     settings: [
@@ -19,13 +29,48 @@ export function initPanelConfig(extensionAPI) {
         },
       },
       {
-        id: "api-key",
-        name: "API Key",
-        description: "Enter your API key",
+        id: "streamResponse",
+        name: "Stream response",
+        description:
+          "Stream responses of GPT models and OpenRouter streamable models:",
+        action: {
+          type: "switch",
+          onChange: (evt) => {
+            streamResponse = !streamResponse;
+          },
+        },
+      },
+      {
+        id: "splitResponse",
+        name: "Split response in multiple blocks",
+        description:
+          "Divide the responses of the AI assistant into as many blocks as paragraphs",
+        action: {
+          type: "switch",
+          onChange: (evt) => {
+            isResponseToSplit = !isResponseToSplit;
+          },
+        },
+      },
+      {
+        id: "openaiapi",
+        name: "OpenAI API Key (GPT)",
+        description: (
+          <>
+            <span>Copy here your OpenAI API key for Whisper & GPT models</span>
+            <br></br>
+            <a href="https://platform.openai.com/api-keys" target="_blank">
+              (Follow this link to generate a new one)
+            </a>
+          </>
+        ),
         action: {
           type: "input",
-          onChange: (value) => {
-            apiKey = value;
+          onChange: (evt) => {
+            setTimeout(() => {
+              OPENAI_API_KEY = evt.target.value;
+              openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
+            }, 200);
           },
         },
       },

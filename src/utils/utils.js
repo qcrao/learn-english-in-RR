@@ -1,3 +1,5 @@
+import { AppToaster } from "../components/toaster";
+
 export const uidRegex = /\(\([^\)]{9}\)\)/g;
 export const pageRegex = /\[\[.*\]\]/g; // very simplified, not recursive...
 export const contextRegex = /\(\(context:.?([^\)]*)\)\)/;
@@ -73,27 +75,6 @@ export function createChildBlock(
     block: { string: content, uid: uid, open: open },
   });
   return uid;
-}
-
-export async function insertBlockInCurrentView(content, order) {
-  let zoomUid = await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid();
-  // If not on a given page, but in Daily Log
-  if (!zoomUid) {
-    zoomUid = window.roamAlphaAPI.util.dateToPageUid(new Date());
-    // TODO : send a message "Added on DNP page"
-  }
-  const newUid = window.roamAlphaAPI.util.generateUID();
-  window.roamAlphaAPI.createBlock({
-    location: {
-      "parent-uid": zoomUid,
-      order: order === "first" || order === 0 ? 0 : "last",
-    },
-    block: {
-      string: content,
-      uid: newUid,
-    },
-  });
-  return newUid;
 }
 
 export const getRoamContextFromPrompt = (prompt) => {
@@ -183,3 +164,65 @@ export const getAndNormalizeContext = async (
 
   return context;
 };
+
+export async function insertBlockInCurrentView(content, order) {
+  let zoomUid = await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid();
+  // If not on a given page, but in Daily Log
+  if (!zoomUid) {
+    zoomUid = window.roamAlphaAPI.util.dateToPageUid(new Date());
+    // TODO : send a message "Added on DNP page"
+  }
+  const newUid = window.roamAlphaAPI.util.generateUID();
+  window.roamAlphaAPI.createBlock({
+    location: {
+      "parent-uid": zoomUid,
+      order: order === "first" || order === 0 ? 0 : "last",
+    },
+    block: {
+      string: content,
+      uid: newUid,
+    },
+  });
+  return newUid;
+}
+
+export function isExistingBlock(uid) {
+  let result = window.roamAlphaAPI.pull("[:block/uid]", [":block/uid", uid]);
+  if (result) return true;
+  return false;
+}
+
+export function createSiblingBlock(currentUid, position) {
+  const currentOrder = getBlockOrderByUid(currentUid);
+  const parentUid = getParentBlock(currentUid);
+  const siblingUid = createChildBlock(
+    parentUid,
+    "",
+    position === "before" ? currentOrder : currentOrder + 1
+  );
+  return siblingUid;
+}
+
+export function updateArrayOfBlocks(arrayOfBlocks) {
+  if (arrayOfBlocks.length) {
+    arrayOfBlocks.forEach((block) =>
+      window.roamAlphaAPI.updateBlock({
+        block: {
+          uid: block.uid.replaceAll("(", "").replaceAll(")", "").trim(),
+          string: block.content,
+        },
+      })
+    );
+  }
+}
+
+export function addContentToBlock(uid, contentToAdd) {
+  const currentContent = getBlockContentByUid(uid).trimEnd();
+  // currentContent += currentContent ? " " : "";
+  window.roamAlphaAPI.updateBlock({
+    block: {
+      uid: uid,
+      string: (currentContent ? currentContent + " " : "") + contentToAdd,
+    },
+  });
+}
