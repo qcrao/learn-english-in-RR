@@ -7,6 +7,7 @@ import {
   apiKey,
   selectedVoiceName,
 } from "./config";
+import { speakText } from "./speechUtils";
 
 function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
@@ -24,40 +25,18 @@ function addSpeechIconToHighlights() {
     const iconContainer = document.createElement("span");
     iconContainer.className = "speech-icon-container";
 
-    // 创建一个函数来处理朗读
-    const speakText = () => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.8;
-
-      // 获取可用的语音
-      const voices = speechSynthesis.getVoices();
-
-      // 选择指定的语音
-      let selectedVoice = voices.find(
-        (voice) => voice.name === selectedVoiceName
-      );
-
-      // 如果找到了指定的语音，就使用它
-      if (!selectedVoice) {
-        console.warn("Selected voice not found, using default voice");
-        selectedVoice = voices[0]; // 使用第一个可用的语音作为默认值
-      }
-
-      utterance.voice = selectedVoice;
-
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
-    };
+    // Use the imported speakText function
+    const handleSpeak = () => speakText(text);
 
     // 为高亮文本添加鼠标悬停事件
-    highlight.addEventListener("mouseenter", speakText);
+    highlight.addEventListener("mouseenter", handleSpeak);
     highlight.addEventListener("mouseleave", () => speechSynthesis.cancel());
 
     // 使用函数组件和 React.createElement 替代 ReactDOM.render
     const SpeechIconComponent = () => {
       return React.createElement(SpeechIcon, {
-        onClick: speakText,
-        onMouseEnter: speakText,
+        onClick: handleSpeak,
+        onMouseEnter: handleSpeak,
         onMouseLeave: () => speechSynthesis.cancel(),
       });
     };
