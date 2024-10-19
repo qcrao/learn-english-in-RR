@@ -26,7 +26,12 @@ export const loadRoamExtensionCommands = (extensionAPI) => {
       // get system prompt from system-prompt.txt
       console.log("systemPrompt :>> ", systemPrompt);
 
-      insertCompletion(systemPrompt, targetUid, "", "gptCompletion");
+      insertCompletion(
+        systemPrompt,
+        targetUid,
+        currentBlockContent,
+        "gptCompletion"
+      );
     },
   });
 };

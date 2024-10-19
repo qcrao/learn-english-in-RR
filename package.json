@@ -14,7 +14,7 @@
     "@blueprintjs/core": "^5.9.1",
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
-    "axios": "^0.28.0",
+    "axios": "^0.28.1",
     "js-tiktoken": "^1.0.12",
     "lamejs": "zhuker/lamejs",
     "openai": "^4.19.0",

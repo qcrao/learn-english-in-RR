@@ -10,6 +10,7 @@ import {
   insertBlockInCurrentView,
   isExistingBlock,
 } from "../utils/utils";
+import axios from "axios";
 
 const getTokenizer = async () => {
   try {
@@ -40,8 +41,8 @@ export const insertCompletion = async (
   isRedone
 ) => {
   lastCompletion.prompt = prompt;
-  lastCompletion.targetUid = targetUid;
   lastCompletion.context = context;
+  lastCompletion.targetUid = targetUid;
   lastCompletion.typeOfCompletion = typeOfCompletion;
   lastCompletion.instantModel = instantModel;
 
@@ -58,7 +59,7 @@ export const insertCompletion = async (
   const responseFormat =
     typeOfCompletion === "gptPostProcessing" ? "json_object" : "text";
 
-  let content;
+  let content = context;
 
   if (isRedone) content = context;
   else {
@@ -81,8 +82,8 @@ export const insertCompletion = async (
   console.log("Prompt sent to AI assistant :>>\n", prompt);
   const aiResponse = await aiCompletion(
     model,
-    prompt,
     context,
+    prompt,
     responseFormat,
     targetUid
   );
