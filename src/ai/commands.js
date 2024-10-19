@@ -13,6 +13,7 @@ import {
   createSiblingBlock,
   insertBlockInCurrentView,
   isExistingBlock,
+  processContent,
 } from "../utils/utils";
 import axios from "axios";
 import { Tiktoken } from "js-tiktoken/lite"; // too big in bundle (almost 3 Mb)
@@ -76,6 +77,8 @@ export const insertCompletion = async (
   const responseFormat =
     typeOfCompletion === "gptPostProcessing" ? "json_object" : "text";
 
+  console.log("responseFormat", responseFormat);
+
   let content = context;
 
   if (isRedone) content = context;
@@ -110,15 +113,20 @@ export const insertCompletion = async (
     console.log("gptPostProcessing");
     updateArrayOfBlocks(aiResponse);
   } else {
-    console.log("split aiResponse :>> ", aiResponse);
     const splittedResponse = splitParagraphs(aiResponse);
-    if (!isResponseToSplit || splittedResponse.length === 1)
-      addContentToBlock(targetUid, splittedResponse[0]);
-    else {
-      for (let i = 0; i < splittedResponse.length; i++) {
-        createChildBlock(targetUid, splittedResponse[i]);
-      }
+    console.log("split aiResponse :>> ", splittedResponse);
+    // 主处理逻辑
+    console.log("split aiResponse :>> ", splittedResponse);
+    for (let i = 0; i < splittedResponse.length; i++) {
+      processContent(targetUid, splittedResponse[i]);
     }
+    // if (!isResponseToSplit || splittedResponse.length === 1)
+    //   addContentToBlock(targetUid, splittedResponse[0]);
+    // else {
+    //   for (let i = 0; i < splittedResponse.length; i++) {
+    //     createChildBlock(targetUid, splittedResponse[i]);
+    //   }
+    // }
   }
 };
 

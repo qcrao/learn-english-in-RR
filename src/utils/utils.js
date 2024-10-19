@@ -63,20 +63,54 @@ export function getBlockContentByUid(uid) {
   else return "";
 }
 
+// export function createChildBlock(
+//   parentUid,
+//   content = "",
+//   order = "last",
+//   open = true
+// ) {
+//   const uid = window.roamAlphaAPI.util.generateUID();
+//   window.roamAlphaAPI.createBlock({
+//     location: { "parent-uid": parentUid, order: order },
+//     block: { string: content, uid: uid, open: open },
+//   });
+//   return uid;
+// }
+
+// 修改后的 createChildBlock 函数，支持递归创建子块
 export function createChildBlock(
   parentUid,
-  content = "",
+  content,
   order = "last",
   open = true
 ) {
   const uid = window.roamAlphaAPI.util.generateUID();
   window.roamAlphaAPI.createBlock({
     location: { "parent-uid": parentUid, order: order },
-    block: { string: content, uid: uid, open: open },
+    block: { string: content.trim(), uid: uid, open: open },
   });
   return uid;
 }
 
+// 新的处理多层级内容的函数
+export function processContent(parentUid, content) {
+  const lines = content.split("\n");
+  const stack = [{ uid: parentUid, level: -1 }];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const indentLevel = line.search(/\S|$/);
+
+    // 移除所有缩进级别高于当前行的项
+    while (stack.length > 1 && stack[stack.length - 1].level >= indentLevel) {
+      stack.pop();
+    }
+
+    // 创建新的块并将其添加到栈中
+    const newUid = createChildBlock(stack[stack.length - 1].uid, line);
+    stack.push({ uid: newUid, level: indentLevel });
+  }
+}
 export const getRoamContextFromPrompt = (prompt) => {
   const elts = ["linkedRefs", "sidebar", "mainPage", "logPages"];
   const roamContext = {};

@@ -54,7 +54,7 @@ export function initPanelConfig(extensionAPI) {
         },
       },
       {
-        id: "openaiapi",
+        id: "openaiapi-key",
         name: "OpenAI API Key (GPT)",
         description: (
           <>
