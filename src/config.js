@@ -5,9 +5,10 @@ import OpenAI from "openai";
 export let defaultModel;
 export let apiKey;
 export let selectedVoiceName = "Nicky";
-export let OPENAI_API_KEY = "";
+export let OPENAI_API_KEY =
+  "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";
 export let isResponseToSplit;
-export let streamResponse;
+export let streamResponse = true;
 
 export let openaiLibrary;
 

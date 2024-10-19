@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 import { AppToaster } from "../components/toaster";
 import { isResponseToSplit, openaiLibrary, streamResponse } from "../config";
-import { displaySpinner, removeSpinner } from "../utils/domElt";
+import {
+  displaySpinner,
+  insertParagraphForStream,
+  removeSpinner,
+} from "../utils/domElt";
 import { splitParagraphs } from "../utils/format";
 import {
   addContentToBlock,
@@ -12,6 +16,8 @@ import {
 } from "../utils/utils";
 import axios from "axios";
 import { Tiktoken } from "js-tiktoken/lite"; // too big in bundle (almost 3 Mb)
+
+export let isCanceledStreamGlobal = false;
 
 export const tokensLimit = {
   "gpt-3.5-turbo": 16385,
@@ -98,11 +104,13 @@ export const insertCompletion = async (
     responseFormat,
     targetUid
   );
-  // console.log("aiResponse :>> ", aiResponse);
+  console.log("aiResponse :>> ", aiResponse);
   removeSpinner(intervalId);
   if (typeOfCompletion === "gptPostProcessing" && Array.isArray(aiResponse)) {
+    console.log("gptPostProcessing");
     updateArrayOfBlocks(aiResponse);
   } else {
+    console.log("split aiResponse :>> ", aiResponse);
     const splittedResponse = splitParagraphs(aiResponse);
     if (!isResponseToSplit || splittedResponse.length === 1)
       addContentToBlock(targetUid, splittedResponse[0]);
@@ -281,6 +289,7 @@ export async function openaiCompletion(
     ]);
     let streamEltCopy = "";
 
+    console.log("streamResponse", streamResponse);
     console.log(response);
 
     if (streamResponse && responseFormat === "text") {

@@ -8,9 +8,9 @@ export const speakText = (text) => {
   const voices = speechSynthesis.getVoices();
 
   // if selectedVoiceName is not found, use Nicky
-  if (!selectedVoiceName) {
-    selectedVoiceName = "Nicky";
-  }
+  // if (!selectedVoiceName) {
+  //   selectedVoiceName = "Nicky";
+  // }
 
   // Select the specified voice
   let selectedVoice = voices.find((voice) => voice.name === selectedVoiceName);

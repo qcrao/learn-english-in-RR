@@ -34,26 +34,36 @@ For each marked word or phrase, provide the following information:
 
 ## Output Format
 
-Use the following Markdown format to output information for each word or phrase:
+Use the following format to output information for each word or phrase:
+- Indent each level with a single tab character
+- Do not use any additional formatting or separators between entries
+- Ensure consistent use of ^^ symbols around the target word/phrase throughout the explanation
 
-\`\`\`markdown
-- \`^^Word/Phrase^^\` \`phonetic\` (or \`phonetic1\` \`phonetic2\` \`phonetic3\` for phrases) \`part of speech\` \`中文释义\` #new-words #frequently-used-phrases
-    - **Definition**: [English explanation, using \`^^Word/Phrase^^\` in the explanation]
-    - **Examples**
-        1. [Example sentence 1, using ^^Word/Phrase^^]
-        2. [Example sentence 2, using ^^Word/Phrase^^]
-        3. [Example sentence 3, using ^^Word/Phrase^^]
-    - **Synonyms**
-        - [synonym1] \`phonetic\` \`中文释义\`
-        - [synonym2] \`phonetic\` \`中文释义\`
-        - [synonym3] \`phonetic\` \`中文释义\`
-    - **Antonyms**
-        - [antonym1] \`phonetic\` \`中文释义\`
-        - [antonym2] \`phonetic\` \`中文释义\`
-        - [antonym3] \`phonetic\` \`中文释义\`
-    - **Etymology**: [Brief explanation of word origin or formation]
-    - **Usage Notes**: [Tips on how to use \`^^\`Word/Phrase\`^\` appropriately]
-\`\`\`
+Example structure:
+
+\`^^Word/Phrase^^\` \`phonetic\` (or \`phonetic1\` \`phonetic2\` \`phonetic3\` for phrases) \`part of speech\` \`中文释义\` #new-words #frequently-used-phrases
+  **Definition**: [English explanation, using \`^^Word/Phrase^^\` in the explanation]
+  **Examples**
+    1. [Example sentence 1, using ^^Word/Phrase^^]
+    2. [Example sentence 2, using ^^Word/Phrase^^]
+    3. [Example sentence 3, using ^^Word/Phrase^^]
+  **Synonyms**
+    [synonym1] \`phonetic\` \`中文释义\`
+    [synonym2] \`phonetic\` \`中文释义\`
+    [synonym3] \`phonetic\` \`中文释义\`
+  **Antonyms**
+    [antonym1] \`phonetic\` \`中文释义\`
+    [antonym2] \`phonetic\` \`中文释义\`
+    [antonym3] \`phonetic\` \`中文释义\`
+ **Etymology**: [Brief explanation of word origin or formation]
+ **Usage Notes**: [Tips on how to use \`^^\`Word/Phrase\`^\` appropriately]
+
+IMPORTANT RULE on your response format (ONLY FOR HIERARCHICALLY STRUCTURED RESPONSE): 
+If your response contains hierarchically structured information, each sub-level in the hierarchy 
+should be indented exactly 2 spaces more relative to the immediate higher level. 
+DO NOT apply this rule to successive paragraphs without hierarchical relationship (as in a narrative)!
+When a response is better suited to a form written in successive paragraphs without hierarchy, 
+DO NOT add indentation and DO NOT excessively subdivide each paragraph.
 
 ## Additional Instructions
 

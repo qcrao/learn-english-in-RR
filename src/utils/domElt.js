@@ -25,3 +25,14 @@ export const removeSpinner = (intervalId) => {
   const spinner = document.querySelector(".speech-spinner");
   if (spinner) spinner.remove();
 };
+
+export const insertParagraphForStream = (targetUid) => {
+  const targetBlockElt = document.querySelector(`[id*="${targetUid}"]`);
+  const previousStreamElt = targetBlockElt.querySelector(".speech-stream");
+  if (previousStreamElt) previousStreamElt.remove();
+  const streamElt = document.createElement("p");
+  streamElt.classList.add("speech-stream");
+  if (targetBlockElt) targetBlockElt.appendChild(streamElt);
+  displaySpinner(targetUid);
+  return streamElt;
+};
