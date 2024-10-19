@@ -51,6 +51,7 @@ export const lastCompletion = {
 };
 
 export const insertCompletion = async (
+  parentUid,
   prompt,
   targetUid,
   context,
@@ -117,9 +118,11 @@ export const insertCompletion = async (
     console.log("split aiResponse :>> ", splittedResponse);
     // 主处理逻辑
     console.log("split aiResponse :>> ", splittedResponse);
-    for (let i = 0; i < splittedResponse.length; i++) {
-      processContent(targetUid, splittedResponse[i]);
-    }
+    // for (let i = 0; i < splittedResponse.length; i++) {
+    //   processContent(parentUid, splittedResponse[i]);
+    // }
+
+    processContent(parentUid, aiResponse);
     // if (!isResponseToSplit || splittedResponse.length === 1)
     //   addContentToBlock(targetUid, splittedResponse[0]);
     // else {

@@ -94,23 +94,50 @@ export function createChildBlock(
 
 // 新的处理多层级内容的函数
 export function processContent(parentUid, content) {
-  const lines = content.split("\n");
-  const stack = [{ uid: parentUid, level: -1 }];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const indentLevel = line.search(/\S|$/);
-
-    // 移除所有缩进级别高于当前行的项
-    while (stack.length > 1 && stack[stack.length - 1].level >= indentLevel) {
-      stack.pop();
-    }
-
-    // 创建新的块并将其添加到栈中
-    const newUid = createChildBlock(stack[stack.length - 1].uid, line);
-    stack.push({ uid: newUid, level: indentLevel });
+  let data;
+  try {
+    // 移除可能存在的 Markdown 代码块标记
+    const jsonContent = content.replace(/^```json\n|```$/g, '').trim();
+    data = JSON.parse(jsonContent);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return;
   }
+
+  data.words.forEach((word) => {
+    // Create the top-level block with basic information
+    const { basic } = word;
+    const basicInfo = `${basic.word} ${basic.phonetic} ${basic.partOfSpeech} ${basic.chineseTranslation}`;
+    const topLevelUid = createChildBlock(parentUid, basicInfo);
+
+    // Create child blocks for other properties
+    const childProperties = [
+      { key: 'Tags', value: word.tags.join(', ') },
+      { key: 'Definition', value: word.definition },
+      { key: 'Etymology', value: word.etymology },
+      { key: 'Usage Notes', value: word.usageNotes }
+    ];
+
+    childProperties.forEach(prop => {
+      createChildBlock(topLevelUid, `${prop.key}: ${prop.value}`);
+    });
+
+    // Create nested blocks for examples, synonyms, and antonyms
+    const nestedProperties = [
+      { key: 'Examples', items: word.examples },
+      { key: 'Synonyms', items: word.synonyms.map(s => `${s.word} ${s.phonetic} ${s.chineseTranslation}`) },
+      { key: 'Antonyms', items: word.antonyms.map(a => `${a.word} ${a.phonetic} ${a.chineseTranslation}`) }
+    ];
+
+    nestedProperties.forEach(prop => {
+      const propUid = createChildBlock(topLevelUid, prop.key);
+      prop.items.forEach(item => {
+        createChildBlock(propUid, item);
+      });
+    });
+  });
 }
+
 export const getRoamContextFromPrompt = (prompt) => {
   const elts = ["linkedRefs", "sidebar", "mainPage", "logPages"];
   const roamContext = {};

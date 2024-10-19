@@ -11,53 +11,61 @@ The user will provide an English text passage where unfamiliar words or phrases 
 
 ## Output Format
 
-Use the following format for each word or phrase, paying careful attention to the hierarchy and indentation:
+Provide the output in JSON format. The response MUST ALWAYS be an object with a "words" key containing an array of objects, where each object represents a word or phrase, even if there's only one word:
 
----
-^^Word/Phrase^^ \`phonetic\` \`part of speech\` \`中文释义\` #new-words #frequently-used-phrases
-
-Definition: [English explanation, using ^^Word/Phrase^^ in the explanation]
-
-Examples:
-  1. [Example sentence 1, using ^^Word/Phrase^^]
-  2. [Example sentence 2, using ^^Word/Phrase^^]
-  3. [Example sentence 3, using ^^Word/Phrase^^]
-
-Synonyms:
-  [synonym1] \`phonetic\` \`中文释义\`
-  [synonym2] \`phonetic\` \`中文释义\`
-  [synonym3] \`phonetic\` \`中文释义\`
-
-Antonyms:
-  [antonym1] \`phonetic\` \`中文释义\`
-  [antonym2] \`phonetic\` \`中文释义\`
-  [antonym3] \`phonetic\` \`中文释义\`
-
-Etymology: [Brief explanation of word origin or formation]
-
-Usage Notes: [Tips on how to use ^^Word/Phrase^^ appropriately]
----
+{
+  "words": [
+    {
+      "basic": {
+        "word": "^^Word/Phrase^^",
+        "phonetic": "phonetic transcription",
+        "partOfSpeech": "part of speech",
+        "chineseTranslation": "中文释义"
+      },
+      "tags": ["new-words", "frequently-used-phrases"],
+      "definition": "English explanation, using ^^Word/Phrase^^ in the explanation",
+      "examples": [
+        "Example sentence 1, using ^^Word/Phrase^^",
+        "Example sentence 2, using ^^Word/Phrase^^",
+        "Example sentence 3, using ^^Word/Phrase^^"
+      ],
+      "synonyms": [
+        {"word": "synonym1", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
+        {"word": "synonym2", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
+        {"word": "synonym3", "phonetic": "phonetic", "chineseTranslation": "中文释义"}
+      ],
+      "antonyms": [
+        {"word": "antonym1", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
+        {"word": "antonym2", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
+        {"word": "antonym3", "phonetic": "phonetic", "chineseTranslation": "中文释义"}
+      ],
+      "etymology": "Brief explanation of word origin or formation",
+      "usageNotes": "Tips on how to use ^^Word/Phrase^^ appropriately"
+    }
+  ]
+}
 
 ## Output Requirements
 
 For each marked word or phrase, provide the following information:
 
-1. Word/Phrase: Keep the ^^ symbols around the word or phrase.
-2. Phonetic: 
-  - For single words: Provide the American phonetic transcription without periods or spaces between syllables.
-  - For phrases: Provide the phonetic transcription for each word separately.
-  - Use standard IPA symbols for American English pronunciation.
-  - Double-check the accuracy of stress marks (ˈ for primary stress, ˌ for secondary stress).
-  - Ensure that all phonemes are correctly represented, including subtle distinctions.
-3. Part of Speech: Use abbreviations (e.g., adj, noun, verb, phrase, etc.).
-4. Chinese Translation: A concise and clear Chinese translation.
-5. Tags: Include #new-words for all new words or phrases, and #frequently-used-phrases if applicable.
-6. Definition: A brief English explanation describing the meaning and usage context.
-7. Examples: Provide 3 example sentences from different scenarios.
-8. Synonyms: List 2-3 synonyms with their phonetic transcription and Chinese translation.
-9. Antonyms: List 2-3 antonyms with their phonetic transcription and Chinese translation.
-10. Etymology: Briefly explain the word's origin or formation.
-11. Usage Notes: Provide suggestions on using the word or phrase in various contexts.
+1. basic:
+   - word: Keep the ^^ symbols around the word or phrase.
+   - phonetic: 
+     - For single words: Provide the American phonetic transcription without periods or spaces between syllables.
+     - For phrases: Provide the phonetic transcription for each word separately.
+     - Use standard IPA symbols for American English pronunciation.
+     - Double-check the accuracy of stress marks (ˈ for primary stress, ˌ for secondary stress).
+     - Ensure that all phonemes are correctly represented, including subtle distinctions.
+   - partOfSpeech: Use abbreviations (e.g., adj, noun, verb, phrase, etc.).
+   - chineseTranslation: A concise and clear Chinese translation.
+2. tags: Include "new-words" for all new words or phrases, and "frequently-used-phrases" if applicable.
+3. definition: A brief English explanation describing the meaning and usage context.
+4. examples: Provide 3 example sentences from different scenarios.
+5. synonyms: List 2-3 synonyms with their phonetic transcription and Chinese translation.
+6. antonyms: List 2-3 antonyms with their phonetic transcription and Chinese translation.
+7. etymology: Briefly explain the word's origin or formation.
+8. usageNotes: Provide suggestions on using the word or phrase in various contexts.
 
 ## Hierarchical Structure Rules
 
