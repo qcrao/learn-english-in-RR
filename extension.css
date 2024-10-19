@@ -1,0 +1,5 @@
+.rm-settings .mother-language-input > input[type="text"] {
+  min-width: 50px;
+  width: 80px;
+  text-align: end;
+}

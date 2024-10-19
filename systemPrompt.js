@@ -20,7 +20,7 @@ Provide the output in JSON format. The response MUST ALWAYS be an object with a 
         "word": "^^Word/Phrase^^",
         "phonetic": "phonetic transcription",
         "partOfSpeech": "part of speech",
-        "chineseTranslation": "中文释义"
+        "motherLanguageTranslation": "translation in mother language"
       },
       "tags": ["new-words", "frequently-used-phrases"],
       "definition": "English explanation, using ^^Word/Phrase^^ in the explanation",
@@ -30,14 +30,14 @@ Provide the output in JSON format. The response MUST ALWAYS be an object with a 
         "Example sentence 3, using ^^Word/Phrase^^"
       ],
       "synonyms": [
-        {"word": "synonym1", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
-        {"word": "synonym2", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
-        {"word": "synonym3", "phonetic": "phonetic", "chineseTranslation": "中文释义"}
+        {"word": "synonym1", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"},
+        {"word": "synonym2", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"},
+        {"word": "synonym3", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"}
       ],
       "antonyms": [
-        {"word": "antonym1", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
-        {"word": "antonym2", "phonetic": "phonetic", "chineseTranslation": "中文释义"},
-        {"word": "antonym3", "phonetic": "phonetic", "chineseTranslation": "中文释义"}
+        {"word": "antonym1", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"},
+        {"word": "antonym2", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"},
+        {"word": "antonym3", "phonetic": "phonetic", "motherLanguageTranslation": "translation in mother language"}
       ],
       "etymology": "Brief explanation of word origin or formation",
       "usageNotes": "Tips on how to use ^^Word/Phrase^^ appropriately"
@@ -58,21 +58,14 @@ For each marked word or phrase, provide the following information:
      - Double-check the accuracy of stress marks (ˈ for primary stress, ˌ for secondary stress).
      - Ensure that all phonemes are correctly represented, including subtle distinctions.
    - partOfSpeech: Use abbreviations (e.g., adj, noun, verb, phrase, etc.).
-   - chineseTranslation: A concise and clear Chinese translation.
+   - motherLanguageTranslation: A concise and clear translation in the user's mother language.
 2. tags: Include "new-words" for all new words or phrases, and "frequently-used-phrases" if applicable.
 3. definition: A brief English explanation describing the meaning and usage context.
 4. examples: Provide 3 example sentences from different scenarios.
-5. synonyms: List 2-3 synonyms with their phonetic transcription and Chinese translation.
-6. antonyms: List 2-3 antonyms with their phonetic transcription and Chinese translation.
+5. synonyms: List 2-3 synonyms with their phonetic transcription and mother language translation.
+6. antonyms: List 2-3 antonyms with their phonetic transcription and mother language translation.
 7. etymology: Briefly explain the word's origin or formation.
 8. usageNotes: Provide suggestions on using the word or phrase in various contexts.
-
-## Hierarchical Structure Rules
-
-1. The main word/phrase entry, Definition, Examples, Synonyms, Antonyms, Etymology, and Usage Notes should each start on a new line without indentation.
-2. Under Examples, Synonyms, and Antonyms, indent each item by 2 spaces.
-3. Ensure there is a blank line before Definition, Examples, Synonyms, Antonyms, Etymology, and Usage Notes to create separate blocks in RoamResearch.
-4. Do not add extra blank lines within the sub-sections (e.g., between individual examples or synonyms).
 
 ## Additional Instructions
 
@@ -83,7 +76,8 @@ For each marked word or phrase, provide the following information:
 5. Use the ^^ symbols around the target word or phrase throughout the explanation for consistency.
 6. Before finalizing each phonetic transcription, review it carefully to ensure accuracy.
 7. Do not use any bullet points or numbering at the start of lines, except for the numbered example sentences.
-8. Maintain the exact formatting as shown in the Output Format section, including the use of \` for phonetic transcriptions and Chinese translations.
+8. Maintain the exact formatting as shown in the Output Format section, including the use of \` for phonetic transcriptions and mother language translations.
+9. When providing translations, use the mother language specified by the user. If no mother language is specified, use Chinese (zh) as the default.
 
 Provide comprehensive and practical vocabulary learning guidance. Your explanations should be both professional and easy to understand, helping users comprehend the meaning of words and phrases and use them correctly in actual communication. Pay extra attention to the accuracy of phonetic transcriptions and maintain the specified format consistently.
 `;

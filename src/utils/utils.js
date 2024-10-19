@@ -119,17 +119,17 @@ export function processContent(parentUid, content) {
 
     // Create nested blocks for examples, synonyms, and antonyms
     const nestedProperties = [
-      { key: "Examples", items: word.examples },
+      { key: "Examples", items: word.examples.map((e, i) => `${i + 1}. ${e}`) },
       {
         key: "Synonyms",
         items: word.synonyms.map(
-          (s) => `^^${s.word}^^ \`${s.phonetic}\` \`${s.chineseTranslation}\``
+          (s, i) => `${i + 1}. ^^${s.word}^^ \`${s.phonetic}\` \`${s.chineseTranslation}\``
         ),
       },
       {
         key: "Antonyms",
         items: word.antonyms.map(
-          (a) => `^^${a.word}^^ \`${a.phonetic}\` \`${a.chineseTranslation}\``
+          (a, i) => `${i + 1}. ^^${a.word}^^ \`${a.phonetic}\` \`${a.chineseTranslation}\``
         ),
       },
     ];

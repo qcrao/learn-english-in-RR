@@ -1,5 +1,5 @@
 import { systemPrompt } from "../systemPrompt";
-import { initializeOpenAIAPI } from "./ai/commands";
+import { getValidLanguageCode, initializeOpenAIAPI } from "./ai/commands";
 import OpenAI from "openai";
 
 export let defaultModel;
@@ -9,9 +9,9 @@ export let OPENAI_API_KEY =
   "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";
 export let isResponseToSplit;
 export let streamResponse = true;
+export let motherLanguage = "zh";
 
 export let openaiLibrary;
-
 export function initPanelConfig(extensionAPI) {
   console.log(systemPrompt);
   return {
@@ -72,6 +72,32 @@ export function initPanelConfig(extensionAPI) {
               OPENAI_API_KEY = evt.target.value;
               openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
             }, 200);
+          },
+        },
+      },
+      {
+        id: "mother language",
+        name: "Mother language",
+        className: "mother-language-input",
+        description: (
+          <>
+            <span>
+              Your mother language code for better explanation of words
+              (optional)
+            </span>
+            <br></br>
+            e.g.: zh, en, es, fr...{" "}
+            <a
+              href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes"
+              target="_blank">
+              (See ISO 639-1 codes here)
+            </a>
+          </>
+        ),
+        action: {
+          type: "input",
+          onChange: (evt) => {
+            motherLanguage = getValidLanguageCode(evt.target.value);
           },
         },
       },

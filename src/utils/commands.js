@@ -1,5 +1,6 @@
 import { systemPrompt } from "../../systemPrompt";
 import { insertCompletion } from "../ai/commands";
+import { motherLanguage } from "../config";
 import {
   createChildBlock,
   getAndNormalizeContext,
@@ -27,6 +28,7 @@ export const loadRoamExtensionCommands = (extensionAPI) => {
       console.log("systemPrompt :>> ", systemPrompt);
 
       insertCompletion(
+        motherLanguage,
         currentUid,
         systemPrompt,
         targetUid,
