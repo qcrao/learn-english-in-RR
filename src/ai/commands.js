@@ -121,6 +121,12 @@ export const insertCompletion = async (
     // for (let i = 0; i < splittedResponse.length; i++) {
     //   processContent(parentUid, splittedResponse[i]);
     // }
+    // remove targetUid
+    window.roamAlphaAPI.deleteBlock({
+      block: {
+        uid: targetUid,
+      },
+    });
 
     processContent(parentUid, aiResponse);
     // if (!isResponseToSplit || splittedResponse.length === 1)

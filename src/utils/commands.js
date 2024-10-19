@@ -22,13 +22,12 @@ export const loadRoamExtensionCommands = (extensionAPI) => {
       if (!currentUid) return;
 
       let targetUid = await createChildBlock(currentUid, "");
-      // let targetUid = currentUid;
 
       // get system prompt from system-prompt.txt
       console.log("systemPrompt :>> ", systemPrompt);
 
       insertCompletion(
-        targetUid,
+        currentUid,
         systemPrompt,
         targetUid,
         currentBlockContent,
