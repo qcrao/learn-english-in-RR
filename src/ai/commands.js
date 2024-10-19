@@ -11,6 +11,17 @@ import {
   isExistingBlock,
 } from "../utils/utils";
 import axios from "axios";
+import { Tiktoken } from "js-tiktoken/lite"; // too big in bundle (almost 3 Mb)
+
+export const tokensLimit = {
+  "gpt-3.5-turbo": 16385,
+  "gpt-4-turbo-preview": 131073,
+  "gpt-4o": 131073,
+  "Claude Haiku": 200000,
+  "Claude Sonnet": 200000,
+  "Claude Opus": 200000,
+  custom: undefined,
+};
 
 const getTokenizer = async () => {
   try {
