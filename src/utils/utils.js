@@ -109,7 +109,7 @@ export function processContent(parentUid, content) {
     const { basic } = word;
     const basicInfo = `${basic.word} \`${basic.phonetic}\` \`${
       basic.partOfSpeech
-    }\` \`${basic.chineseTranslation}\` ${word.tags
+    }\` \`${basic.motherLanguageTranslation}\` ${word.tags
       .map((tag) => `#${tag}`)
       .join(" ")}`;
     const topLevelUid = createChildBlock(parentUid, basicInfo);
@@ -123,13 +123,19 @@ export function processContent(parentUid, content) {
       {
         key: "Synonyms",
         items: word.synonyms.map(
-          (s, i) => `${i + 1}. ^^${s.word}^^ \`${s.phonetic}\` \`${s.chineseTranslation}\``
+          (s, i) =>
+            `${i + 1}. ^^${s.word}^^ \`${s.phonetic}\` \`${
+              s.motherLanguageTranslation
+            }\``
         ),
       },
       {
         key: "Antonyms",
         items: word.antonyms.map(
-          (a, i) => `${i + 1}. ^^${a.word}^^ \`${a.phonetic}\` \`${a.chineseTranslation}\``
+          (a, i) =>
+            `${i + 1}. ^^${a.word}^^ \`${a.phonetic}\` \`${
+              a.motherLanguageTranslation
+            }\``
         ),
       },
     ];
