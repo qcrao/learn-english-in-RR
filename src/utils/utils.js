@@ -97,7 +97,7 @@ export function processContent(parentUid, content) {
   let data;
   try {
     // 移除可能存在的 Markdown 代码块标记
-    const jsonContent = content.replace(/^```json\n|```$/g, '').trim();
+    const jsonContent = content.replace(/^```json\n|```$/g, "").trim();
     data = JSON.parse(jsonContent);
   } catch (error) {
     console.error("Error parsing JSON:", error);
@@ -107,33 +107,48 @@ export function processContent(parentUid, content) {
   data.words.forEach((word) => {
     // Create the top-level block with basic information
     const { basic } = word;
-    const basicInfo = `${basic.word} ${basic.phonetic} ${basic.partOfSpeech} ${basic.chineseTranslation}`;
+    const basicInfo = `${basic.word} \`${basic.phonetic}\` \`${
+      basic.partOfSpeech
+    }\` \`${basic.chineseTranslation}\` ${word.tags
+      .map((tag) => `#${tag}`)
+      .join(" ")}`;
     const topLevelUid = createChildBlock(parentUid, basicInfo);
 
-    // Create child blocks for other properties
-    const childProperties = [
-      { key: 'Tags', value: word.tags.join(', ') },
-      { key: 'Definition', value: word.definition },
-      { key: 'Etymology', value: word.etymology },
-      { key: 'Usage Notes', value: word.usageNotes }
-    ];
-
-    childProperties.forEach(prop => {
-      createChildBlock(topLevelUid, `${prop.key}: ${prop.value}`);
-    });
+    // Create a child block for the definition
+    createChildBlock(topLevelUid, `**Definition**: ${word.definition}`);
 
     // Create nested blocks for examples, synonyms, and antonyms
     const nestedProperties = [
-      { key: 'Examples', items: word.examples },
-      { key: 'Synonyms', items: word.synonyms.map(s => `${s.word} ${s.phonetic} ${s.chineseTranslation}`) },
-      { key: 'Antonyms', items: word.antonyms.map(a => `${a.word} ${a.phonetic} ${a.chineseTranslation}`) }
+      { key: "Examples", items: word.examples },
+      {
+        key: "Synonyms",
+        items: word.synonyms.map(
+          (s) => `^^${s.word}^^ \`${s.phonetic}\` \`${s.chineseTranslation}\``
+        ),
+      },
+      {
+        key: "Antonyms",
+        items: word.antonyms.map(
+          (a) => `^^${a.word}^^ \`${a.phonetic}\` \`${a.chineseTranslation}\``
+        ),
+      },
     ];
 
-    nestedProperties.forEach(prop => {
-      const propUid = createChildBlock(topLevelUid, prop.key);
-      prop.items.forEach(item => {
+    nestedProperties.forEach((prop) => {
+      const propUid = createChildBlock(topLevelUid, `**${prop.key}**`);
+      prop.items.forEach((item) => {
         createChildBlock(propUid, item);
       });
+    });
+
+    // Create child blocks for other properties
+    const childProperties = [
+      { key: "Etymology", value: word.etymology },
+      { key: "Usage Notes", value: word.usageNotes },
+    ];
+
+    childProperties.forEach((prop) => {
+      createChildBlock(topLevelUid, `**${prop.key}**: ${prop.value}`);
     });
   });
 }
