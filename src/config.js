@@ -13,7 +13,6 @@ export let motherLanguage = "zh";
 
 export function loadInitialSettings(extensionAPI) {
   OPENAI_API_KEY = extensionAPI.settings.get("openai-api-key");
-  console.log("====OPENAI_API_KEY :>> ", OPENAI_API_KEY);
   openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
 
   defaultOpenAIModel = extensionAPI.settings.get("model-provider");
@@ -27,7 +26,6 @@ export function loadInitialSettings(extensionAPI) {
 }
 
 export function initPanelConfig(extensionAPI) {
-  console.log(systemPrompt);
   return {
     tabTitle: "Learn English in RR",
     settings: [

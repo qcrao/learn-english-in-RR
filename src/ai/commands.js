@@ -78,15 +78,12 @@ export const insertCompletion = async (
   const responseFormat =
     typeOfCompletion === "gptPostProcessing" ? "json_object" : "text";
 
-  console.log("responseFormat", responseFormat);
-
   let content = context;
 
   if (isRedone) content = context;
   else {
     content = await verifyTokenLimitAndTruncate(model, prompt, content);
   }
-  console.log("Context (eventually truncated):\n", content);
   prompt += `\n\nThe mother language of the user is ${motherLanguage}.`;
 
   if (isRedone && typeOfCompletion === "gptCompletion") {
@@ -101,7 +98,7 @@ export const insertCompletion = async (
     } else targetUid = await insertBlockInCurrentView(assistantRole);
   }
   const intervalId = await displaySpinner(targetUid);
-  console.log("Prompt sent to AI assistant :>>\n", prompt);
+
   const aiResponse = await aiCompletion(
     model,
     context,
@@ -109,35 +106,16 @@ export const insertCompletion = async (
     responseFormat,
     targetUid
   );
-  console.log("aiResponse :>> ", aiResponse);
   removeSpinner(intervalId);
-  if (typeOfCompletion === "gptPostProcessing" && Array.isArray(aiResponse)) {
-    console.log("gptPostProcessing");
-    updateArrayOfBlocks(aiResponse);
-  } else {
-    const splittedResponse = splitParagraphs(aiResponse);
-    console.log("split aiResponse :>> ", splittedResponse);
-    // 主处理逻辑
-    console.log("split aiResponse :>> ", splittedResponse);
-    // for (let i = 0; i < splittedResponse.length; i++) {
-    //   processContent(parentUid, splittedResponse[i]);
-    // }
-    // remove targetUid
-    window.roamAlphaAPI.deleteBlock({
-      block: {
-        uid: targetUid,
-      },
-    });
 
-    processContent(parentUid, aiResponse);
-    // if (!isResponseToSplit || splittedResponse.length === 1)
-    //   addContentToBlock(targetUid, splittedResponse[0]);
-    // else {
-    //   for (let i = 0; i < splittedResponse.length; i++) {
-    //     createChildBlock(targetUid, splittedResponse[i]);
-    //   }
-    // }
-  }
+  // remove targetUid
+  window.roamAlphaAPI.deleteBlock({
+    block: {
+      uid: targetUid,
+    },
+  });
+
+  processContent(parentUid, aiResponse);
 };
 const supportedLanguage = [
   "af",
@@ -321,13 +299,11 @@ async function aiCompletion(
   return aiResponse;
 }
 const verifyTokenLimitAndTruncate = async (model, prompt, content) => {
-  // console.log("tokensLimit object :>> ", tokensLimit);
   if (!tokenizer) {
     tokenizer = await getTokenizer();
   }
   if (!tokenizer) return content;
   const tokens = tokenizer.encode(prompt + content);
-  console.log("context tokens :", tokens.length);
 
   const limit = tokensLimit[model];
   if (!limit) {
@@ -342,10 +318,6 @@ const verifyTokenLimitAndTruncate = async (model, prompt, content) => {
     // 1% margin of error
     const ratio = limit / tokens.length - 0.01;
     content = content.slice(0, content.length * ratio);
-    console.log(
-      "tokens of truncated context:",
-      tokenizer.encode(prompt + content).length
-    );
   }
   return content;
 };
@@ -419,9 +391,6 @@ export async function openaiCompletion(
     ]);
     let streamEltCopy = "";
 
-    console.log("streamResponse", streamResponse);
-    console.log(response);
-
     if (streamResponse && responseFormat === "text") {
       const streamElt = insertParagraphForStream(targetUid);
 
@@ -445,7 +414,7 @@ export async function openaiCompletion(
         else streamElt.remove();
       }
     }
-    console.log("OpenAI chat completion response :>>", response);
+
     return streamResponse && responseFormat === "text"
       ? respStr
       : response.choices[0].message.content;

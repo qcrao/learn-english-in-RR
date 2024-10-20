@@ -166,7 +166,6 @@ export const getRoamContextFromPrompt = (prompt) => {
   const inlineCommand = getMatchingInlineCommand(prompt, contextRegex);
   if (!inlineCommand) return null;
   const { command, options } = inlineCommand;
-  // console.log("options :>> ", options);
   elts.forEach((elt) => {
     if (options.includes(elt)) {
       roamContext[elt] = true;
