@@ -96,11 +96,27 @@ export function createChildBlock(
 export function processContent(parentUid, content) {
   let data;
   try {
-    // 移除可能存在的 Markdown 代码块标记
-    const jsonContent = content.replace(/^```json\n|```$/g, "").trim();
+    // Remove any leading/trailing whitespace and potential Markdown code block markers
+    const jsonContent = content.replace(/^```json\s*|\s*```$/g, "").trim();
     data = JSON.parse(jsonContent);
   } catch (error) {
     console.error("Error parsing JSON:", error);
+    console.log("Problematic content:", content);
+    AppToaster.show({
+      message: "Error parsing JSON content. Please check the format.",
+      intent: "danger",
+      timeout: 5000,
+    });
+    return;
+  }
+
+  if (!data.words || !Array.isArray(data.words)) {
+    console.error("Invalid data structure: 'words' array not found");
+    AppToaster.show({
+      message: "Invalid data structure: 'words' array not found",
+      intent: "danger",
+      timeout: 5000,
+    });
     return;
   }
 

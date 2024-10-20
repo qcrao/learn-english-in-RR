@@ -414,7 +414,7 @@ export async function openaiCompletion(
         else streamElt.remove();
       }
     }
-
+    console.log("respStr :>> ", respStr);
     return streamResponse && responseFormat === "text"
       ? respStr
       : response.choices[0].message.content;
@@ -424,6 +424,7 @@ export async function openaiCompletion(
       message: `OpenAI error msg: ${error.message}`,
       timeout: 15000,
     });
+    console.log("respStr :>> ", respStr);
     return respStr;
   }
 }
