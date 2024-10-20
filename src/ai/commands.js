@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { AppToaster } from "../components/toaster";
-import { isResponseToSplit, openaiLibrary, streamResponse } from "../config";
+import { openaiLibrary, streamResponse } from "../config";
 import {
   displaySpinner,
   insertParagraphForStream,

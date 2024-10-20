@@ -2,16 +2,30 @@ import { systemPrompt } from "../systemPrompt";
 import { getValidLanguageCode, initializeOpenAIAPI } from "./ai/commands";
 import OpenAI from "openai";
 
-export let defaultModel;
-export let apiKey;
 export let selectedVoiceName = "Nicky";
-export let OPENAI_API_KEY =
-  "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";
-export let isResponseToSplit;
+
+export let openaiLibrary;
+export let OPENAI_API_KEY = "";
+export let defaultOpenAIModel;
+
 export let streamResponse = true;
 export let motherLanguage = "zh";
 
-export let openaiLibrary;
+export function loadInitialSettings(extensionAPI) {
+  OPENAI_API_KEY = extensionAPI.settings.get("openai-api-key");
+  console.log("====OPENAI_API_KEY :>> ", OPENAI_API_KEY);
+  openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
+
+  defaultOpenAIModel = extensionAPI.settings.get("model-provider");
+  if (!defaultOpenAIModel) defaultOpenAIModel = "GPT-4o-mini";
+
+  streamResponse = extensionAPI.settings.get("streamResponse");
+  if (!streamResponse) streamResponse = true;
+
+  motherLanguage = extensionAPI.settings.get("mother-language-input");
+  if (!motherLanguage) motherLanguage = "zh";
+}
+
 export function initPanelConfig(extensionAPI) {
   console.log(systemPrompt);
   return {
@@ -25,7 +39,7 @@ export function initPanelConfig(extensionAPI) {
           type: "select",
           items: ["OpenAI", "GitHub"],
           onChange: (value) => {
-            defaultModel = value;
+            defaultOpenAIModel = value;
           },
         },
       },
@@ -42,19 +56,7 @@ export function initPanelConfig(extensionAPI) {
         },
       },
       {
-        id: "splitResponse",
-        name: "Split response in multiple blocks",
-        description:
-          "Divide the responses of the AI assistant into as many blocks as paragraphs",
-        action: {
-          type: "switch",
-          onChange: (evt) => {
-            isResponseToSplit = !isResponseToSplit;
-          },
-        },
-      },
-      {
-        id: "openaiapi-key",
+        id: "openai-api-key",
         name: "OpenAI API Key (GPT)",
         description: (
           <>

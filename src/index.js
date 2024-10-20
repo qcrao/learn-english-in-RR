@@ -3,10 +3,10 @@ import ReactDOM from "react-dom";
 import { SpeechIcon } from "./SpeechIcon";
 import {
   initPanelConfig,
-  defaultModel,
-  apiKey,
+  defaultOpenAIModel,
   selectedVoiceName,
   OPENAI_API_KEY,
+  loadInitialSettings,
 } from "./config";
 import { speakText } from "./utils/speechUtils";
 import { loadRoamExtensionCommands } from "./utils/commands";
@@ -49,18 +49,8 @@ function addSpeechIconToHighlights() {
 }
 
 async function onload({ extensionAPI }) {
+  await loadInitialSettings(extensionAPI);
   console.log("Loaded Learn-English-in-RR in roam");
-
-  if (extensionAPI.settings.get("openaiapi-key") === null)
-    await extensionAPI.settings.set(
-      "openaiapi-key",
-      "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"
-    );
-
-  if (extensionAPI.settings.get("streamResponse") === null)
-    await extensionAPI.settings.set("streamResponse", true);
-  if (extensionAPI.settings.get("splitResponse") === null)
-    await extensionAPI.settings.set("splitResponse", true);
 
   const panelConfig = initPanelConfig(extensionAPI);
   await extensionAPI.settings.panel.create(panelConfig);
