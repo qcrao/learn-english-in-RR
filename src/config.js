@@ -1,6 +1,4 @@
-import { systemPrompt } from "../systemPrompt";
 import { getValidLanguageCode, initializeOpenAIAPI } from "./ai/commands";
-import OpenAI from "openai";
 
 export let selectedVoiceName = "Nicky";
 
@@ -89,7 +87,8 @@ export function initPanelConfig(extensionAPI) {
             e.g.: zh, en, es, fr...{" "}
             <a
               href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes"
-              target="_blank">
+              target="_blank"
+            >
               (See ISO 639-1 codes here)
             </a>
           </>

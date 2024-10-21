@@ -3,9 +3,6 @@ import ReactDOM from "react-dom";
 import { SpeechIcon } from "./SpeechIcon";
 import {
   initPanelConfig,
-  defaultOpenAIModel,
-  selectedVoiceName,
-  OPENAI_API_KEY,
   loadInitialSettings,
 } from "./config";
 import { speakText } from "./utils/speechUtils";

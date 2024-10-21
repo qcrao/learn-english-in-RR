@@ -6,15 +6,7 @@ import {
   insertParagraphForStream,
   removeSpinner,
 } from "../utils/domElt";
-import { splitParagraphs } from "../utils/format";
-import {
-  addContentToBlock,
-  createChildBlock,
-  createSiblingBlock,
-  insertBlockInCurrentView,
-  isExistingBlock,
-  processContent,
-} from "../utils/utils";
+import { processContent } from "../utils/utils";
 import axios from "axios";
 import { Tiktoken } from "js-tiktoken/lite"; // too big in bundle (almost 3 Mb)
 
@@ -48,24 +40,12 @@ export const insertCompletion = async (
   parentUid,
   prompt,
   targetUid,
-  context,
-  typeOfCompletion,
+  content,
   instantModel
 ) => {
-  let defaultModel = "gpt-3.5-turbo";
+  let defaultModel = "gpt-4o-mini";
 
   let model = instantModel || defaultModel;
-  if (model === "first OpenRouter model") {
-    model = openRouterModels.length
-      ? "openRouter/" + openRouterModels[0]
-      : "gpt-3.5-turbo";
-  } else if (model === "first Ollama local model") {
-    model = ollamaModels.length ? "ollama/" + ollamaModels[0] : "gpt-3.5-turbo";
-  }
-  const responseFormat =
-    typeOfCompletion === "gptPostProcessing" ? "json_object" : "text";
-
-  let content = context;
 
   content = await verifyTokenLimitAndTruncate(model, prompt, content);
 
@@ -75,9 +55,9 @@ export const insertCompletion = async (
 
   const aiResponse = await aiCompletion(
     model,
-    context,
     prompt,
-    responseFormat,
+    content,
+    "text",
     targetUid
   );
   removeSpinner(intervalId);
@@ -210,68 +190,34 @@ export function getValidLanguageCode(input) {
 async function aiCompletion(
   instantModel,
   prompt,
-  content = "",
+  content,
   responseFormat,
   targetUid
 ) {
   let aiResponse;
   let model = instantModel || defaultModel;
-  let prefix = model.split("/")[0];
-  if (responseFormat === "json_object")
-    prompt += "\n\nResponse format:\n" + instructionsOnJSONResponse;
-  if (prefix === "openRouter" && openrouterLibrary?.apiKey) {
+
+  if (openaiLibrary?.apiKey) {
     aiResponse = await openaiCompletion(
-      openrouterLibrary,
-      model.replace("openRouter/", ""),
-      prompt,
-      content,
-      responseFormat,
-      targetUid
-    );
-  } else if (prefix === "ollama") {
-    aiResponse = await ollamaCompletion(
-      model.replace("ollama/", ""),
+      openaiLibrary,
+      model,
       prompt,
       content,
       responseFormat,
       targetUid
     );
   } else {
-    if (model.slice(0, 6) === "Claude" && ANTHROPIC_API_KEY)
-      aiResponse = await claudeCompletion(
-        model,
-        prompt,
-        content,
-        responseFormat,
-        targetUid
-      );
-    else if (openaiLibrary?.apiKey)
-      aiResponse = await openaiCompletion(
-        openaiLibrary,
-        model,
-        prompt,
-        content,
-        responseFormat,
-        targetUid
-      );
-    else {
-      AppToaster.show({
-        message: `Provide an API key to use ${model} model. See doc and settings.`,
-        timeout: 15000,
-      });
-      AppToaster;
-      return "";
-    }
-  }
-  if (responseFormat === "json_object") {
-    let parsedResponse = JSON.parse(aiResponse);
-    if (typeof parsedResponse.response === "string")
-      parsedResponse.response = JSON.parse(parsedResponse.response);
-    aiResponse = parsedResponse.response;
+    AppToaster.show({
+      message: `Provide an API key to use ${model} model. See doc and settings.`,
+      timeout: 15000,
+    });
+    AppToaster;
+    return "";
   }
 
   return aiResponse;
 }
+
 const verifyTokenLimitAndTruncate = async (model, prompt, content) => {
   if (!tokenizer) {
     tokenizer = await getTokenizer();
@@ -305,9 +251,8 @@ export function initializeOpenAIAPI(API_KEY, baseURL) {
     if (baseURL) {
       clientSetting.baseURL = baseURL;
       clientSetting.defaultHeaders = {
-        "HTTP-Referer":
-          "https://github.com/fbgallet/roam-extension-speech-to-roam", // Optional, for including your app on openrouter.ai rankings.
-        "X-Title": "Live AI Assistant for Roam Research", // Optional. Shows in rankings on openrouter.ai.
+        "HTTP-Referer": "https://github.com/qcrao/learn-english-in-RR", // Optional, for including your app on openrouter.ai rankings.
+        "X-Title": "Learn English in RR", // Optional. Shows in rankings on openrouter.ai.
       };
     }
     const openai = new OpenAI(clientSetting);
@@ -315,7 +260,7 @@ export function initializeOpenAIAPI(API_KEY, baseURL) {
   } catch (error) {
     console.log(error.message);
     AppToaster.show({
-      message: `Live AI Assistant - Error during the initialization of OpenAI API: ${error.message}`,
+      message: `Learn English in RR - Error during the initialization of OpenAI API: ${error.message}`,
     });
   }
 }
@@ -331,14 +276,14 @@ export async function openaiCompletion(
   let messages = [
     {
       role: "system",
-      content: content,
+      content: prompt,
     },
     {
       role: "user",
       content: [
         {
           type: "text",
-          text: prompt,
+          text: content,
         },
       ],
     },

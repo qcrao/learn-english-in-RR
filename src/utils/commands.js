@@ -11,16 +11,14 @@ import {
 
 export const loadRoamExtensionCommands = async (extensionAPI) => {
   const extractNewWords = (uid, blockContent) => {
-    createChildBlock(uid, "").then((targetUid) => {
-      insertCompletion(
-        motherLanguage,
-        uid,
-        systemPrompt,
-        targetUid,
-        blockContent,
-        "gptCompletion"
-      );
-    });
+    const targetUid = createChildBlock(uid, "");
+    insertCompletion(
+      motherLanguage,
+      uid,
+      systemPrompt,
+      targetUid,
+      blockContent
+    );
   };
 
   // Add the new context menu option
