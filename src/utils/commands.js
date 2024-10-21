@@ -10,10 +10,8 @@ import {
 } from "./utils";
 
 export const loadRoamExtensionCommands = async (extensionAPI) => {
-  // ... existing code ...
-
   const extractNewWords = (uid, blockContent) => {
-    createChildBlock(uid, "").then(targetUid => {
+    createChildBlock(uid, "").then((targetUid) => {
       insertCompletion(
         motherLanguage,
         uid,
@@ -39,8 +37,8 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
   // Add the context menu item
   const CONTEXT_MENU_COMMAND_LABEL = "Extract new words";
   const commandCallback = (e) => {
-    const uid = e.target.closest('.rm-block__input').id.slice(-9);
-    const blockContent = e.target.closest('.rm-block__input').textContent;
+    const uid = e.target.closest(".rm-block__input").id.slice(-9);
+    const blockContent = e.target.closest(".rm-block__input").textContent;
     extractNewWords(uid, blockContent);
   };
 

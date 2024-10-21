@@ -43,12 +43,6 @@ const getTokenizer = async () => {
 };
 export let tokenizer = await getTokenizer();
 
-export const lastCompletion = {
-  prompt: null,
-  targetUid: null,
-  context: null,
-  typeOfCompletion: null,
-};
 export const insertCompletion = async (
   motherLanguage,
   parentUid,
@@ -56,15 +50,8 @@ export const insertCompletion = async (
   targetUid,
   context,
   typeOfCompletion,
-  instantModel,
-  isRedone
+  instantModel
 ) => {
-  lastCompletion.prompt = prompt;
-  lastCompletion.context = context;
-  lastCompletion.targetUid = targetUid;
-  lastCompletion.typeOfCompletion = typeOfCompletion;
-  lastCompletion.instantModel = instantModel;
-
   let defaultModel = "gpt-3.5-turbo";
 
   let model = instantModel || defaultModel;
@@ -80,23 +67,10 @@ export const insertCompletion = async (
 
   let content = context;
 
-  if (isRedone) content = context;
-  else {
-    content = await verifyTokenLimitAndTruncate(model, prompt, content);
-  }
+  content = await verifyTokenLimitAndTruncate(model, prompt, content);
+
   prompt += `\n\nThe mother language of the user is ${motherLanguage}.`;
 
-  if (isRedone && typeOfCompletion === "gptCompletion") {
-    if (isExistingBlock(targetUid)) {
-      targetUid = createSiblingBlock(targetUid, "before");
-      window.roamAlphaAPI.updateBlock({
-        block: {
-          uid: targetUid,
-          string: assistantRole,
-        },
-      });
-    } else targetUid = await insertBlockInCurrentView(assistantRole);
-  }
   const intervalId = await displaySpinner(targetUid);
 
   const aiResponse = await aiCompletion(
