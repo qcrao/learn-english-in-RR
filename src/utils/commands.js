@@ -1,13 +1,7 @@
 import { systemPrompt } from "../../systemPrompt";
 import { insertCompletion } from "../ai/commands";
 import { motherLanguage } from "../config";
-import {
-  createChildBlock,
-  getAndNormalizeContext,
-  getFocusAndSelection,
-  getRoamContextFromPrompt,
-  insertBlockInCurrentView,
-} from "./utils";
+import { createChildBlock, getFocusAndSelection } from "./utils";
 
 export const loadRoamExtensionCommands = async (extensionAPI) => {
   const extractNewWords = (uid, blockContent) => {

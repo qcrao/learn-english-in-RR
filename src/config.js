@@ -33,7 +33,15 @@ export function initPanelConfig(extensionAPI) {
         description: "Choose the model provider",
         action: {
           type: "select",
-          items: ["OpenAI", "GitHub"],
+          items: [
+            "GPT-4o-mini",
+            "GPT-4o",
+            "GPT-4 Turbo",
+            "GPT-4",
+            "GPT-3.5-turbo",
+            "o1-preview",
+            "o1-mini",
+          ],
           onChange: (value) => {
             defaultOpenAIModel = value;
           },
@@ -87,8 +95,7 @@ export function initPanelConfig(extensionAPI) {
             e.g.: zh, en, es, fr...{" "}
             <a
               href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes"
-              target="_blank"
-            >
+              target="_blank">
               (See ISO 639-1 codes here)
             </a>
           </>

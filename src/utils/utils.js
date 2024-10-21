@@ -140,18 +140,14 @@ export function processContent(parentUid, content) {
         key: "Synonyms",
         items: word.synonyms.map(
           (s, i) =>
-            `${i + 1}. ^^${s.word}^^ \`${s.phonetic}\` \`${
-              s.motherLanguageTranslation
-            }\``
+            `^^${s.word}^^ \`${s.phonetic}\` \`${s.partOfSpeech}\` \`${s.motherLanguageTranslation}\``
         ),
       },
       {
         key: "Antonyms",
         items: word.antonyms.map(
           (a, i) =>
-            `${i + 1}. ^^${a.word}^^ \`${a.phonetic}\` \`${
-              a.motherLanguageTranslation
-            }\``
+            `^^${a.word}^^ \`${a.phonetic}\` \`${a.partOfSpeech}\` \`${a.motherLanguageTranslation}\``
         ),
       },
     ];
