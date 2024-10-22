@@ -89,11 +89,11 @@ export function initPanelConfig(extensionAPI) {
         action: {
           type: "select",
           items: [
-            "GPT-4o-mini",
-            "GPT-4o",
-            "GPT-4 Turbo",
-            "GPT-4",
-            "GPT-3.5-turbo",
+            "gpt-4o-mini",
+            "gpt-4o",
+            "gpt-4-turbo",
+            "gpt-4",
+            "gpt-3.5-turbo",
             "o1-preview",
             "o1-mini",
           ],

@@ -13,12 +13,13 @@ import { Tiktoken } from "js-tiktoken/lite"; // too big in bundle (almost 3 Mb)
 export let isCanceledStreamGlobal = false;
 
 export const tokensLimit = {
+  "gpt-4o-mini": 128000,
+  "gpt-4o": 128000,
+  "gpt-4-turbo": 128000,
+  "gpt-4": 8192,
   "gpt-3.5-turbo": 16385,
-  "gpt-4-turbo-preview": 131073,
-  "gpt-4o": 131073,
-  "Claude Haiku": 200000,
-  "Claude Sonnet": 200000,
-  "Claude Opus": 200000,
+  "o1-preview": 128000,
+  "o1-mini": 128000,
   custom: undefined,
 };
 
