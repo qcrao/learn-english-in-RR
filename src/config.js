@@ -33,13 +33,9 @@ export function initPanelConfig(extensionAPI) {
         description: "Select the preferred voice",
         action: {
           type: "select",
-          items: ["Nicky", "Aaron", "Daniel", "Junior"],
+          items: ["Nicky", "Aaron", "Junior"],
           onChange: (value) => {
-            if (value === "Daniel") {
-              selectedVoiceName = "Daniel (English (United Kingdom))";
-            } else {
-              selectedVoiceName = value;
-            }
+            selectedVoiceName = value;
           },
         },
       },

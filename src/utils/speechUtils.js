@@ -7,16 +7,18 @@ const speakWithVoice = (voice, text) => {
   utterance.rate = 0.8;
   utterance.volume = 1; // 确保音量设置为最大
 
-  console.log(`Voice: ${voice.name}, URI: ${voice.voiceURI}, Language: ${voice.lang}`);
+  console.log(
+    `Voice: ${voice.name}, URI: ${voice.voiceURI}, Language: ${voice.lang}`
+  );
 
   // 添加错误处理
   utterance.onerror = (event) => {
-    console.error('SpeechSynthesisUtterance error:', event);
+    console.error("SpeechSynthesisUtterance error:", event);
   };
 
   // 添加开始和结束事件的日志
-  utterance.onstart = () => console.log('Speech started');
-  utterance.onend = () => console.log('Speech ended');
+  utterance.onstart = () => console.log("Speech started");
+  utterance.onend = () => console.log("Speech ended");
 
   speechSynthesis.cancel(); // 取消任何正在进行的语音
   setTimeout(() => {
@@ -27,19 +29,28 @@ const speakWithVoice = (voice, text) => {
 export const speakText = (text) => {
   const speakWithAvailableVoices = () => {
     const voices = speechSynthesis.getVoices();
-    console.log('Available voices:', voices.map(v => v.name));
-    
-    let selectedVoice = voices.find((voice) => voice.name === selectedVoiceName);
+
+    // only keep lang=en-US voices
+    const englishVoices = voices.filter((voice) => voice.lang === "en-US");
+
+    let selectedVoice = englishVoices.find(
+      (voice) => voice.name === selectedVoiceName
+    );
 
     if (!selectedVoice) {
       console.warn("Selected voice not found, using default voice");
-      selectedVoice = voices[0]; // Use the first available voice as default
+      selectedVoice = englishVoices[0]; // Use the first available voice as default
     }
 
     if (selectedVoice) {
       speakWithVoice(selectedVoice, text);
     } else {
-      console.error('No voices available');
+      AppToaster.show({
+        message: "No voices available",
+        intent: "warning",
+        timeout: 3000,
+      });
+      console.error("No voices available");
     }
   };
 
