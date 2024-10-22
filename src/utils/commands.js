@@ -15,6 +15,25 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
       });
       return;
     }
+
+    // check the new words total number separated by ^^^^
+    const newWordsArray = blockContent.match(/\^\^(.*?)\^\^/g) || [];
+    const newWordsNumber = newWordsArray.length;
+
+    console.log(newWordsArray);
+    console.log(newWordsNumber);
+
+    const maxWordsLimit = 10;
+
+    if (newWordsNumber > maxWordsLimit) {
+      AppToaster.show({
+        message: `Too many (${newWordsNumber}) new words. Please provide less than ${maxWordsLimit} new words.`,
+        intent: "warning",
+        timeout: 3000,
+      });
+      return;
+    }
+
     const targetUid = createChildBlock(uid, "");
     insertCompletion(
       motherLanguage,
