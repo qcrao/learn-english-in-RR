@@ -1,10 +1,20 @@
 import { systemPrompt } from "../../systemPrompt";
 import { insertCompletion } from "../ai/commands";
+import { AppToaster } from "../components/toaster";
 import { motherLanguage } from "../config";
 import { createChildBlock, getFocusAndSelection } from "./utils";
 
 export const loadRoamExtensionCommands = async (extensionAPI) => {
   const extractNewWords = (uid, blockContent) => {
+    // if content is empty, return
+    if (!blockContent) {
+      AppToaster.show({
+        message: "Content is empty. Please provide some text to process.",
+        intent: "warning",
+        timeout: 3000,
+      });
+      return;
+    }
     const targetUid = createChildBlock(uid, "");
     insertCompletion(
       motherLanguage,
