@@ -83,7 +83,9 @@ After installation, configure the extension in the Roam Research settings panel:
 
 - Hover over any highlighted text or the icon to hear the pronunciation
 
-**Retry if the explanation is not detailed enough, you can delete the existing explanation and try again**
+---
+
+**NOTE: Retry if the explanation is not detailed enough, you can delete the existing explanation and try again**
 
 ## Tips
 
