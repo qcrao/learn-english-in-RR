@@ -61,7 +61,7 @@ For each marked word or phrase, provide the following information:
      - Ensure that all phonemes are correctly represented, including subtle distinctions.
    - partOfSpeech: Use abbreviations (e.g., adj, noun, verb, phrase, etc.).
    - motherLanguageTranslation: A concise and clear translation in the user's mother language.
-2. tags: Include "new-words" for all new words or phrases, and "frequently-used-phrases" if applicable.
+2. tags: Include "new-words" for all new words or phrases, and "frequently-used-phrases" if applicable.Only add the #frequently-used-phrases tag for common phrases, idioms, and fixed expressions (e.g., "in terms of", "by all means"). Never add this tag for single words, even if they are commonly used.
 3. definition: A brief English explanation describing the meaning and usage context.
 4. examples: Provide 3 example sentences from different scenarios.
 5. synonyms: List 2-3 synonyms with their phonetic transcription, partOfSpeech and mother language translation.
