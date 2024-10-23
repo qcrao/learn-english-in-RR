@@ -20,9 +20,6 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     const newWordsArray = blockContent.match(/\^\^(.*?)\^\^/g) || [];
     const newWordsNumber = newWordsArray.length;
 
-    console.log(newWordsArray);
-    console.log(newWordsNumber);
-
     const maxWordsLimit = 10;
 
     if (newWordsNumber > maxWordsLimit) {

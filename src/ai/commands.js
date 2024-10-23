@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { AppToaster } from "../components/toaster";
-import { openaiLibrary, streamResponse } from "../config";
+import { OPENAI_API_KEY, openaiLibrary, streamResponse } from "../config";
 import {
   displaySpinner,
   insertParagraphForStream,
@@ -197,6 +197,10 @@ async function aiCompletion(
 ) {
   let aiResponse;
   let model = instantModel || defaultModel;
+
+  console.log("OPENAI_API_KEY :>> ", OPENAI_API_KEY);
+  console.log("openaiLibrary :>> ", openaiLibrary);
+  console.log("openaiLibrary?.apiKey :>> ", openaiLibrary?.apiKey);
 
   if (openaiLibrary?.apiKey) {
     aiResponse = await openaiCompletion(
