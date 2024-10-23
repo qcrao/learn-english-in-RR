@@ -4,7 +4,7 @@ Learn English in RR is a powerful Roam Research extension designed to enhance yo
 
 Recommendation: create a new Roam graph for learning English.
 
-![new words](./assets/new_words.jpg)
+![extract new words](./assets/extract-new-words.gif)
 
 ## Features
 
@@ -80,6 +80,8 @@ After installation, configure the extension in the Roam Research settings panel:
 ![command palette](./assets/cmd+p.jpg)
 
 ### 4. **Text-to-Speech**
+
+![new words](./assets/new_words.jpg)
 
 - Hover over any highlighted text or the icon to hear the pronunciation
 
