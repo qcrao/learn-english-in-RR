@@ -4,6 +4,8 @@ Learn English in RR is a powerful Roam Research extension designed to enhance yo
 
 Recommendation: create a new Roam graph for learning English.
 
+![new words](./assets/new_words.jpg)
+
 ## Features
 
 1. **Word Extraction and Explanation**
@@ -47,21 +49,41 @@ After installation, configure the extension in the Roam Research settings panel:
 
 ## Usage
 
-1. **Extracting New Words**
+### 1. **Customizing Explanations**
 
-   - Highlight a word or phrase with `^^` (e.g., `^^unpretentious^^`)
-   - Better less than 10 words at a time
-   - Right-click and select "Extract new words" from the context menu or use the shortcut `Cmd+Shift+E` (you should first set the shortcut in the settings) or use `Cmd+P` and type `extract new words`
-   - The extension will generate a detailed explanation below the current block
-   - Retry if the explanation is not detailed enough, you can delete the existing explanation and try again
+- Adjust the mother language in settings for translations in your native language
+- Change the OpenAI model for different levels of explanation detail
 
-2. **Text-to-Speech**
+### 2. **Active the block**
 
-   - Hover over any highlighted text or the icon to hear the pronunciation
+- Note: cursor should be inside the block when you extract new words, that means the block should be active
 
-3. **Customizing Explanations**
-   - Adjust the mother language in settings for translations in your native language
-   - Change the OpenAI model for different levels of explanation detail
+![active the block](./assets/active_the_block.gif)
+
+### 3. **Extracting New Words**
+
+- Highlight a word or phrase with `^^` (e.g., `^^unpretentious^^`)
+- Better less than 10 words at a time
+- Right-click and select "Extract new words" from the context menu or use the hotkey `Cmd+Shift+E` (you should first set the hotkey in the settings) or use `Cmd+P` and type `extract new words`
+- The extension will generate a detailed explanation below the current block
+
+#### right click context menu
+
+![right click context menu](./assets/right-click-extensions.jpg)
+
+#### hotkeys
+
+![hotkeys](./assets/hotkeys.jpg)
+
+#### command palette
+
+![command palette](./assets/cmd+p.jpg)
+
+### 4. **Text-to-Speech**
+
+- Hover over any highlighted text or the icon to hear the pronunciation
+
+**Retry if the explanation is not detailed enough, you can delete the existing explanation and try again**
 
 ## Tips
 
