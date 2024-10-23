@@ -4,7 +4,7 @@ Learn English in RR is a powerful Roam Research extension designed to enhance yo
 
 Recommendation: create a new Roam graph for learning English.
 
-![extract new words](./assets/extract-new-words.gif)
+![extract new words](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/extract-new-words.gif?raw=true)
 
 ## Features
 
@@ -58,7 +58,7 @@ After installation, configure the extension in the Roam Research settings panel:
 
 - Note: cursor should be inside the block when you extract new words, that means the block should be active
 
-![active the block](./assets/active_the_block.gif)
+![active the block](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/active_the_block.gif?raw=true)
 
 ### 3. **Extracting New Words**
 
@@ -69,19 +69,19 @@ After installation, configure the extension in the Roam Research settings panel:
 
 #### right click context menu
 
-![right click context menu](./assets/right-click-extensions.jpg)
+![right click context menu](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/right-click-extensions.jpg?raw=true)
 
 #### hotkeys
 
-![hotkeys](./assets/hotkeys.jpg)
+![hotkeys](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/hotkeys.jpg?raw=true)
 
 #### command palette
 
-![command palette](./assets/cmd+p.jpg)
+![command palette](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/cmd+p.jpg?raw=true)
 
 ### 4. **Text-to-Speech**
 
-![new words](./assets/new_words.jpg)
+![new words](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/new_words.jpg?raw=true)
 
 - Hover over any highlighted text or the icon to hear the pronunciation
 
