@@ -52,6 +52,23 @@ export const insertCompletion = async (
 
   prompt += `\n\nThe mother language of the user is ${motherLanguage}.`;
 
+  if (!motherLanguage) {
+    AppToaster.show({
+      message:
+        "Incorrect mother language code, see instructions in settings panel.",
+      intent: "danger",
+      timeout: 3000,
+    });
+    // remove targetUid
+    window.roamAlphaAPI.deleteBlock({
+      block: {
+        uid: targetUid,
+      },
+    });
+    console.error("No mother language provided");
+    return;
+  }
+
   const intervalId = await displaySpinner(targetUid);
 
   const aiResponse = await aiCompletion(
@@ -69,6 +86,11 @@ export const insertCompletion = async (
       uid: targetUid,
     },
   });
+
+  if (!aiResponse) {
+    console.error("No response from AI");
+    return;
+  }
 
   processContent(parentUid, aiResponse);
 };
@@ -183,7 +205,7 @@ export function getValidLanguageCode(input) {
   } else {
     AppToaster.show({
       message:
-        "Learn English in RR: Incorrect language code for mother language, see instructions in settings panel.",
+        "Incorrect language code for mother language, see instructions in settings panel.",
     });
     return "";
   }
@@ -202,7 +224,7 @@ async function aiCompletion(
   console.log("openaiLibrary :>> ", openaiLibrary);
   console.log("openaiLibrary?.apiKey :>> ", openaiLibrary?.apiKey);
 
-  if (openaiLibrary?.apiKey) {
+  if (openaiLibrary && openaiLibrary.apiKey && openaiLibrary.apiKey !== "") {
     aiResponse = await openaiCompletion(
       openaiLibrary,
       model,
@@ -214,9 +236,9 @@ async function aiCompletion(
   } else {
     AppToaster.show({
       message: `Provide an API key to use ${model} model. See doc and settings.`,
+      intent: "danger",
       timeout: 15000,
     });
-    AppToaster;
     return "";
   }
 

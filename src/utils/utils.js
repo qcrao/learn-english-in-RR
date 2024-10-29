@@ -94,6 +94,8 @@ export function createChildBlock(
 
 // 新的处理多层级内容的函数
 export function processContent(parentUid, content) {
+  if (!content) return;
+
   let data;
   try {
     // Remove any leading/trailing whitespace and potential Markdown code block markers

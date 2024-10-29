@@ -69,8 +69,7 @@ export function initPanelConfig(extensionAPI) {
       {
         id: "streamResponse",
         name: "Stream response",
-        description:
-          "Stream responses of GPT models and OpenRouter streamable models:",
+        description: "Stream responses of GPT models",
         action: {
           type: "switch",
           onChange: (evt) => {
