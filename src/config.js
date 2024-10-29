@@ -17,7 +17,6 @@ export function loadInitialSettings(extensionAPI) {
   if (!defaultOpenAIModel) defaultOpenAIModel = "GPT-4o-mini";
 
   streamResponse = extensionAPI.settings.get("streamResponse");
-  if (!streamResponse) streamResponse = true;
 
   motherLanguage = extensionAPI.settings.get("mother-language-input");
   if (!motherLanguage) motherLanguage = "zh";
