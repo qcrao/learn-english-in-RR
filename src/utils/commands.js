@@ -4,6 +4,8 @@ import { AppToaster } from "../components/toaster";
 import { motherLanguage } from "../config";
 import { createChildBlock, getFocusAndSelection } from "./utils";
 
+const CONTEXT_MENU_COMMAND_LABEL = "Extract new words";
+
 export const loadRoamExtensionCommands = async (extensionAPI) => {
   const extractNewWords = (uid, blockContent) => {
     // if content is empty, return
@@ -53,7 +55,6 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
   });
 
   // Add the context menu item
-  const CONTEXT_MENU_COMMAND_LABEL = "Extract new words";
   const commandCallback = (e) => {
     const uid = e.target.closest(".rm-block__input").id.slice(-9);
     const blockContent = e.target.closest(".rm-block__input").textContent;

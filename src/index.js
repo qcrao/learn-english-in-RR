@@ -3,7 +3,10 @@ import ReactDOM from "react-dom";
 import { SpeechIcon } from "./SpeechIcon";
 import { initPanelConfig, loadInitialSettings } from "./config";
 import { speakText } from "./utils/speechUtils";
-import { loadRoamExtensionCommands } from "./utils/commands";
+import {
+  loadRoamExtensionCommands,
+  CONTEXT_MENU_COMMAND_LABEL,
+} from "./utils/commands";
 
 function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
@@ -80,6 +83,12 @@ async function onload({ extensionAPI }) {
 
 function onunload() {
   console.log("Unloaded Learn-English-in-RR in roam");
+
+  // Remove the context menu command
+  window.roamAlphaAPI.ui.blockContextMenu.removeCommand({
+    label: CONTEXT_MENU_COMMAND_LABEL,
+  });
+
   // 如果需要,在这里清理添加的图标和事件监听器
   const speechIconContainers = document.querySelectorAll(
     ".speech-icon-container"
