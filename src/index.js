@@ -1,10 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { SpeechIcon } from "./SpeechIcon";
-import {
-  initPanelConfig,
-  loadInitialSettings,
-} from "./config";
+import { initPanelConfig, loadInitialSettings } from "./config";
 import { speakText } from "./utils/speechUtils";
 import { loadRoamExtensionCommands } from "./utils/commands";
 
@@ -45,6 +42,9 @@ function addSpeechIconToHighlights() {
   });
 }
 
+// 将 observer 移到外部作用域
+let observer;
+
 async function onload({ extensionAPI }) {
   await loadInitialSettings(extensionAPI);
   console.log("Loaded Learn-English-in-RR in roam");
@@ -58,7 +58,7 @@ async function onload({ extensionAPI }) {
   addSpeechIconToHighlights();
 
   let debounceTimer;
-  const observer = new MutationObserver((mutations) => {
+  observer = new MutationObserver((mutations) => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       const hasRelevantChanges = mutations.some((mutation) =>
@@ -81,6 +81,30 @@ async function onload({ extensionAPI }) {
 function onunload() {
   console.log("Unloaded Learn-English-in-RR in roam");
   // 如果需要,在这里清理添加的图标和事件监听器
+  const speechIconContainers = document.querySelectorAll(
+    ".speech-icon-container"
+  );
+  if (speechIconContainers?.length) {
+    speechIconContainers.forEach((container) => {
+      container?.remove();
+    });
+  }
+
+  const highlights = document.querySelectorAll(".rm-highlight");
+  if (highlights?.length) {
+    highlights.forEach((highlight) => {
+      if (highlight) {
+        highlight.removeEventListener("mouseenter", handleSpeak);
+        highlight.removeEventListener("mouseleave", () =>
+          speechSynthesis.cancel()
+        );
+      }
+    });
+  }
+  // clear the observer
+  if (observer) {
+    observer.disconnect();
+  }
 }
 
 export default {
