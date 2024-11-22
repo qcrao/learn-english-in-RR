@@ -198,6 +198,24 @@ const supportedLanguage = [
 
 export function getValidLanguageCode(input) {
   if (!input) return "";
+
+  // Handle special cases for Chinese variants
+  if (
+    input.toLowerCase().trim() === "zh-tw" ||
+    input.toLowerCase().trim() === "zh-hant"
+  ) {
+    AppToaster.clear();
+    return "zh-Hant";
+  }
+  if (
+    input.toLowerCase().trim() === "zh-cn" ||
+    input.toLowerCase().trim() === "zh-hans"
+  ) {
+    AppToaster.clear();
+    return "zh-Hans";
+  }
+
+  // Handle basic two-letter codes
   let lggCode = input.toLowerCase().trim().slice(0, 2);
   if (supportedLanguage.includes(lggCode)) {
     AppToaster.clear();
@@ -210,6 +228,7 @@ export function getValidLanguageCode(input) {
     return "";
   }
 }
+
 async function aiCompletion(
   instantModel,
   prompt,
