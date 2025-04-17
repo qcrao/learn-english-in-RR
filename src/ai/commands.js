@@ -36,6 +36,65 @@ const getTokenizer = async () => {
 };
 export let tokenizer = await getTokenizer();
 
+// Helper function to get already parsed words from immediate child blocks
+function getExistingParsedWords(blockUid) {
+  // Get all immediate children, regardless of whether they have children
+  const childrenQuery = `[:find (pull ?child [:block/string])
+                        :where
+                        [?parent :block/uid "${blockUid}"]
+                        [?child :block/parents ?parent]
+                        [?parent :block/children ?child]]`; // This ensures we only get immediate children
+
+  const results = window.roamAlphaAPI.q(childrenQuery);
+  const existingWords = new Set();
+
+  console.log("DEBUG: Raw children blocks:", results);
+
+  results.forEach((result) => {
+    const blockContent = result[0]?.string;
+    console.log("DEBUG: Processing block content:", blockContent);
+
+    if (blockContent) {
+      // Extract the first word, which may have ^^ marks
+      const wordMatch = blockContent.match(/^\^\^([^`^]+)\^\^/);
+      if (wordMatch && wordMatch[1]) {
+        console.log("DEBUG: Found word in block:", wordMatch[1]);
+        existingWords.add(wordMatch[1].toLowerCase());
+      }
+    }
+  });
+
+  console.log("DEBUG: Existing parsed words:", Array.from(existingWords));
+  return existingWords;
+}
+
+// Helper function to remove ^^ marks from already parsed words
+function removeMarksFromParsedWords(content, existingWords) {
+  console.log("DEBUG: Input content:", content);
+  console.log(
+    "DEBUG: Existing words to remove marks from:",
+    Array.from(existingWords)
+  );
+
+  let result = content;
+  // First pass: remove ^^ marks from already parsed words
+  existingWords.forEach((word) => {
+    // Escape special regex characters in the word
+    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`\\^\\^${escapedWord}\\^\\^`, "gi");
+    const beforeReplace = result;
+    result = result.replace(regex, word);
+    if (beforeReplace !== result) {
+      console.log(`DEBUG: Removed marks for word "${word}"`);
+      console.log("DEBUG: Before:", beforeReplace);
+      console.log("DEBUG: After:", result);
+    }
+  });
+
+  console.log("DEBUG: Final content after removing marks:", result);
+  return result;
+}
+
 export const insertCompletion = async (
   motherLanguage,
   parentUid,
@@ -45,10 +104,37 @@ export const insertCompletion = async (
   instantModel
 ) => {
   let defaultModel = "gpt-4o-mini";
-
   let model = instantModel || defaultModel;
 
-  content = await verifyTokenLimitAndTruncate(model, prompt, content);
+  console.log("DEBUG: Starting insertCompletion");
+  console.log("DEBUG: Original content:", content);
+
+  // Get existing parsed words
+  const existingWords = getExistingParsedWords(parentUid);
+
+  // Remove ^^ marks from already parsed words
+  const updatedContent = removeMarksFromParsedWords(content, existingWords);
+
+  // Check if there are any remaining marked words
+  const remainingMarkedWords = updatedContent.match(/\^\^([^\^]+)\^\^/g);
+  console.log("DEBUG: Remaining marked words:", remainingMarkedWords);
+
+  if (!remainingMarkedWords) {
+    AppToaster.show({
+      message: "No new marked words to parse.",
+      intent: "warning",
+      timeout: 3000,
+    });
+    // remove targetUid
+    window.roamAlphaAPI.deleteBlock({
+      block: {
+        uid: targetUid,
+      },
+    });
+    return;
+  }
+
+  content = await verifyTokenLimitAndTruncate(model, prompt, updatedContent);
 
   prompt += `\n\nThe mother language of the user is ${motherLanguage}.`;
 
