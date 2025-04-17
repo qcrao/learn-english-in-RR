@@ -48,50 +48,32 @@ function getExistingParsedWords(blockUid) {
   const results = window.roamAlphaAPI.q(childrenQuery);
   const existingWords = new Set();
 
-  console.log("DEBUG: Raw children blocks:", results);
-
   results.forEach((result) => {
     const blockContent = result[0]?.string;
-    console.log("DEBUG: Processing block content:", blockContent);
 
     if (blockContent) {
       // Extract the first word, which may have ^^ marks
       const wordMatch = blockContent.match(/^\^\^([^`^]+)\^\^/);
       if (wordMatch && wordMatch[1]) {
-        console.log("DEBUG: Found word in block:", wordMatch[1]);
         existingWords.add(wordMatch[1].toLowerCase());
       }
     }
   });
 
-  console.log("DEBUG: Existing parsed words:", Array.from(existingWords));
   return existingWords;
 }
 
 // Helper function to remove ^^ marks from already parsed words
 function removeMarksFromParsedWords(content, existingWords) {
-  console.log("DEBUG: Input content:", content);
-  console.log(
-    "DEBUG: Existing words to remove marks from:",
-    Array.from(existingWords)
-  );
-
   let result = content;
   // First pass: remove ^^ marks from already parsed words
   existingWords.forEach((word) => {
     // Escape special regex characters in the word
     const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`\\^\\^${escapedWord}\\^\\^`, "gi");
-    const beforeReplace = result;
     result = result.replace(regex, word);
-    if (beforeReplace !== result) {
-      console.log(`DEBUG: Removed marks for word "${word}"`);
-      console.log("DEBUG: Before:", beforeReplace);
-      console.log("DEBUG: After:", result);
-    }
   });
 
-  console.log("DEBUG: Final content after removing marks:", result);
   return result;
 }
 
@@ -106,9 +88,6 @@ export const insertCompletion = async (
   let defaultModel = "gpt-4o-mini";
   let model = instantModel || defaultModel;
 
-  console.log("DEBUG: Starting insertCompletion");
-  console.log("DEBUG: Original content:", content);
-
   // Get existing parsed words
   const existingWords = getExistingParsedWords(parentUid);
 
@@ -117,7 +96,6 @@ export const insertCompletion = async (
 
   // Check if there are any remaining marked words
   const remainingMarkedWords = updatedContent.match(/\^\^([^\^]+)\^\^/g);
-  console.log("DEBUG: Remaining marked words:", remainingMarkedWords);
 
   if (!remainingMarkedWords) {
     AppToaster.show({
@@ -325,10 +303,6 @@ async function aiCompletion(
   let aiResponse;
   let model = instantModel || defaultModel;
 
-  console.log("OPENAI_API_KEY :>> ", OPENAI_API_KEY);
-  console.log("openaiLibrary :>> ", openaiLibrary);
-  console.log("openaiLibrary?.apiKey :>> ", openaiLibrary?.apiKey);
-
   if (openaiLibrary && openaiLibrary.apiKey && openaiLibrary.apiKey !== "") {
     aiResponse = await openaiCompletion(
       openaiLibrary,
@@ -449,7 +423,6 @@ export async function openaiCompletion(
         for await (const chunk of response) {
           if (isCanceledStreamGlobal) {
             streamElt.innerHTML += "(⚠️ stream interrupted by user)";
-            // respStr = "";
             break;
           }
           respStr += chunk.choices[0]?.delta?.content || "";
@@ -465,7 +438,6 @@ export async function openaiCompletion(
         else streamElt.remove();
       }
     }
-    console.log("respStr :>> ", respStr);
     return streamResponse && responseFormat === "text"
       ? respStr
       : response.choices[0].message.content;
@@ -475,7 +447,6 @@ export async function openaiCompletion(
       message: `OpenAI error msg: ${error.message}`,
       timeout: 15000,
     });
-    console.log("respStr :>> ", respStr);
     return respStr;
   }
 }
