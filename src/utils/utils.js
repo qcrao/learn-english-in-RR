@@ -92,7 +92,15 @@ export function createChildBlock(
   return uid;
 }
 
-// 新的处理多层级内容的函数
+export function stripBackticks(text) {
+  return text ? text.replace(/`/g, "").trim() : "";
+}
+
+export function ensureBackticks(text) {
+  const stripped = stripBackticks(text);
+  return stripped ? `\`${stripped}\`` : "";
+}
+
 export function processContent(parentUid, content) {
   if (!content) return;
 
@@ -125,11 +133,11 @@ export function processContent(parentUid, content) {
   data.words.forEach((word) => {
     // Create the top-level block with basic information
     const { basic } = word;
-    const basicInfo = `${basic.word} \`${basic.phonetic}\` \`${
-      basic.partOfSpeech
-    }\` \`${basic.motherLanguageTranslation}\` ${word.tags
-      .map((tag) => `#${tag}`)
-      .join(" ")}`;
+    const basicInfo = `${basic.word} ${ensureBackticks(
+      basic.phonetic
+    )} ${ensureBackticks(basic.partOfSpeech)} ${ensureBackticks(
+      basic.motherLanguageTranslation
+    )} ${word.tags.map((tag) => `#${tag}`).join(" ")}`;
     const topLevelUid = createChildBlock(parentUid, basicInfo);
 
     // Create a child block for the definition
@@ -142,14 +150,18 @@ export function processContent(parentUid, content) {
         key: "Synonyms",
         items: word.synonyms.map(
           (s, i) =>
-            `^^${s.word}^^ \`${s.phonetic}\` \`${s.partOfSpeech}\` \`${s.motherLanguageTranslation}\``
+            `^^${s.word}^^ ${ensureBackticks(s.phonetic)} ${ensureBackticks(
+              s.partOfSpeech
+            )} ${ensureBackticks(s.motherLanguageTranslation)}`
         ),
       },
       {
         key: "Antonyms",
         items: word.antonyms.map(
           (a, i) =>
-            `^^${a.word}^^ \`${a.phonetic}\` \`${a.partOfSpeech}\` \`${a.motherLanguageTranslation}\``
+            `^^${a.word}^^ ${ensureBackticks(a.phonetic)} ${ensureBackticks(
+              a.partOfSpeech
+            )} ${ensureBackticks(a.motherLanguageTranslation)}`
         ),
       },
     ];
