@@ -6,6 +6,7 @@ import { speakText } from "./utils/speechUtils";
 import {
   loadRoamExtensionCommands,
   CONTEXT_MENU_COMMAND_LABEL,
+  ANKI_CONTEXT_MENU_COMMAND_LABEL,
 } from "./utils/commands";
 
 function addSpeechIconToHighlights() {
@@ -84,9 +85,13 @@ async function onload({ extensionAPI }) {
 function onunload() {
   console.log("Unloaded Learn-English-in-RR in roam");
 
-  // Remove the context menu command
+  // Remove the context menu commands
   window.roamAlphaAPI.ui.blockContextMenu.removeCommand({
     label: CONTEXT_MENU_COMMAND_LABEL,
+  });
+  
+  window.roamAlphaAPI.ui.blockContextMenu.removeCommand({
+    label: ANKI_CONTEXT_MENU_COMMAND_LABEL,
   });
 
   // 如果需要,在这里清理添加的图标和事件监听器

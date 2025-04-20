@@ -63,6 +63,69 @@ export function getBlockContentByUid(uid) {
   else return "";
 }
 
+export function getBlockAndChildrenContentByUid(uid) {
+  const blockContent = getBlockContentByUid(uid);
+  let content = blockContent || "";
+  
+  // Get the children blocks
+  const children = window.roamAlphaAPI.q(`
+    [:find (pull ?block [:block/string :block/uid :block/order])
+     :where 
+     [?parent :block/uid "${uid}"]
+     [?parent :block/children ?block]]
+  `);
+  
+  if (children && children.length > 0) {
+    // Sort children by order
+    const sortedChildren = children.sort((a, b) => a[0].order - b[0].order);
+    
+    // Add children content with indentation
+    sortedChildren.forEach(child => {
+      const childUid = child[0].uid;
+      const childContent = child[0].string;
+      content += "\n- " + childContent;
+      
+      // Recursively get nested children
+      const nestedContent = getNestedChildrenContent(childUid, 2);
+      if (nestedContent) {
+        content += nestedContent;
+      }
+    });
+  }
+  
+  return content;
+}
+
+function getNestedChildrenContent(parentUid, depth) {
+  let content = "";
+  const children = window.roamAlphaAPI.q(`
+    [:find (pull ?block [:block/string :block/uid :block/order])
+     :where 
+     [?parent :block/uid "${parentUid}"]
+     [?parent :block/children ?block]]
+  `);
+  
+  if (children && children.length > 0) {
+    // Sort children by order
+    const sortedChildren = children.sort((a, b) => a[0].order - b[0].order);
+    
+    // Add children content with indentation
+    sortedChildren.forEach(child => {
+      const childUid = child[0].uid;
+      const childContent = child[0].string;
+      content += "\n" + "  ".repeat(depth) + "- " + childContent;
+      
+      // Recursively get nested children with increased depth
+      const nestedContent = getNestedChildrenContent(childUid, depth + 1);
+      if (nestedContent) {
+        content += nestedContent;
+      }
+    });
+  }
+  
+  return content;
+}
+
 // export function createChildBlock(
 //   parentUid,
 //   content = "",
