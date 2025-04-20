@@ -47,23 +47,29 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       return false;
     }
     
-    // Prepare context sentence for the front of the card
-    // Replace highlighted words with colored versions
+    // Prepare context sentence for the front of the card with proper highlighting
+    // Use inline style that works reliably in Anki
     let contextSentence = firstLine;
-    // We need to work backwards to not mess up indices when replacing
     const allMatchesCopy = [...allMatches].sort((a, b) => b.index - a.index);
     
     for (const match of allMatchesCopy) {
       if (match.type === 'highlight') {
-        // Replace ^^word^^ with <span style="color: #f2c744; font-weight: bold;">word</span>
+        // Using both color and background-color for better visibility in both light and dark mode
         const before = contextSentence.substring(0, match.index);
         const after = contextSentence.substring(match.index + match.word.length + 4); // +4 for the ^^
-        contextSentence = before + '<span style="color: #f2c744; font-weight: bold;">' + match.word + '</span>' + after;
+        contextSentence = before + 
+          '<mark style="background-color: #f2c744; color: black;">' + 
+          match.word + 
+          '</mark>' + 
+          after;
       } else if (match.type === 'speech') {
-        // Replace word 🔊 with <span style="color: #f2c744; font-weight: bold;">word</span>
         const before = contextSentence.substring(0, match.index);
         const after = contextSentence.substring(match.index + match.word.length + 2); // +2 for the 🔊 and space
-        contextSentence = before + '<span style="color: #f2c744; font-weight: bold;">' + match.word + '</span>' + after;
+        contextSentence = before + 
+          '<mark style="background-color: #f2c744; color: black;">' + 
+          match.word + 
+          '</mark>' + 
+          after;
       }
     }
     
@@ -127,21 +133,21 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       let definition = '';
       let examples = [];
       
-      // Look for definition after the word block
+      // Find the definition section for this word (after word block)
       for (let i = wordBlockIndex + 1; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Check if we've moved to a different word or section
-        if (i > wordBlockIndex + 1 && 
-            (line.includes('^^') || 
-             line.includes('🔊') || 
-             line === '' || 
-             line.match(/^•\s+[a-zA-Z]+\s+🔊/) ||
-             (line.startsWith('•') && line.includes('#new-words')))) {
+        // Stop processing if we've reached another word entry
+        if (i > wordBlockIndex + 1 && (
+            (line.includes('^^') && line.includes('#new-words')) || 
+            (line.includes('🔊') && line.includes('#new-words')) ||
+            // Match a line with the bullet point format that starts a new word
+            (line.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/))
+        )) {
           break;
         }
         
-        // Look for definition
+        // Find definition
         if (line.includes('Definition:') || line.includes('**Definition**:')) {
           definition = line
             .replace(/\*\*Definition\*\*:/, '')
@@ -153,49 +159,46 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
             .replace(/\^\^([^^]+)\^\^/g, '$1')
             .replace(/🔊/g, '')
             .trim();
-          continue;
         }
         
-        // Look for examples section
+        // Find "Examples" heading section
         if (line.includes('Examples') || line.includes('**Examples**')) {
-          // Collect examples that follow
+          // Start collecting examples from the next line
           let j = i + 1;
           while (j < lines.length) {
             const exLine = lines[j].trim();
             
-            // Break if we hit another section or word
-            if (exLine.includes('**') && 
-                !exLine.includes('Example') && 
-                !exLine.startsWith('-') && 
-                !exLine.match(/^\d+\./)) {
+            // Stop collecting if we hit another main heading or another word
+            if ((exLine.match(/^\s*\*\*[^*]+\*\*/) && !exLine.includes('Example')) ||
+                (exLine.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/)) ||
+                (exLine.includes('#new-words'))) {
               break;
             }
             
-            // Check for numbered examples or bullet points
-            if (exLine.match(/^\d+\./) || exLine.startsWith('-')) {
-              // Clean up the example text
+            // Check for bullet points or numbered examples
+            if (exLine.match(/^\s*•/) || exLine.match(/^\s*-/) || exLine.match(/^\s*\d+\./)) {
               let example = exLine
-                .replace(/^\d+\./, '')
-                .replace(/^-/, '')
+                .replace(/^\s*•/, '')
+                .replace(/^\s*-/, '')
+                .replace(/^\s*\d+\./, '')
                 .replace(/\^\^([^^]+)\^\^/g, '$1')
                 .replace(/🔊/g, '')
                 .trim();
               
-              examples.push(example);
+              // Only add if not empty and not a section marker
+              if (example && 
+                  !example.match(/^\*\*[^*]+\*\*/) && 
+                  !example.includes('Synonyms') && 
+                  !example.includes('Antonyms') &&
+                  !example.includes('Etymology') &&
+                  !example.includes('Usage Notes')) {
+                examples.push(example);
+              }
             }
             
             j++;
-            
-            // Break if we've reached another word or section
-            if (j < lines.length && 
-                (lines[j].includes('^^') || 
-                 lines[j].includes('🔊') || 
-                 lines[j].includes('Synonyms') || 
-                 lines[j].includes('Antonyms'))) {
-              break;
-            }
           }
-          break;
+          break; // Exit after finding Examples section
         }
       }
       
@@ -223,6 +226,16 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
 </div>
       `.trim();
       
+      // Add CSS to ensure highlighting works in both light and dark mode
+      const css = `
+<style>
+  /* Make sure highlighted text remains visible in dark mode */
+  .night-mode mark, .nightMode mark {
+    color: black !important;
+  }
+</style>
+      `;
+      
       // Send to Anki Connect API
       const response = await axios.post('http://localhost:8765', {
         action: "addNote",
@@ -232,8 +245,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
             deckName: deckName,
             modelName: "Basic",
             fields: {
-              Front: front,
-              Back: back
+              Front: front + css,
+              Back: back + css
             },
             options: {
               allowDuplicate: false
