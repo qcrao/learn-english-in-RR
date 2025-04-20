@@ -20,7 +20,7 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
     const firstLine = lines[0].trim();
     
     // Find all highlighted words in the context
-    const highlightedWordsMatches = [...firstLine.matchAll(/\^\^([^^]+)\^\^/g)];
+    const highlightedWordsMatches = [...firstLine.matchAll(/\^\^([^^]+?)\^\^/g)];
     const speechIconMatches = [...firstLine.matchAll(/([a-zA-Z]+)\s+🔊/g)];
     
     // Combine both match types
@@ -90,14 +90,17 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
     const wordEntries = [];
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      
       // Check if this is a word entry line (either with ^^ or 🔊)
+      // First try to match word entries with part of speech
       if ((line.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/) || 
            line.match(/\^\^([^^]+)\^\^/) || 
            line.match(/([a-zA-Z]+)\s+🔊/)) && 
           (line.includes('noun') || 
            line.includes('verb') || 
            line.includes('adjective') || 
-           line.includes('adverb'))) {
+           line.includes('adverb') ||
+           line.includes('adj'))) {
         
         // Extract the word from the line
         let wordMatch = line.match(/\^\^([^^]+)\^\^/) || line.match(/([a-zA-Z]+)\s+🔊/);
@@ -111,6 +114,40 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               wordBlock: line
             }
           });
+        }
+      }
+    }
+    
+    // If we haven't found entries for all highlighted words, try a more flexible approach
+    const highlightedWords = allMatches.map(match => match.word.toLowerCase());
+    const foundWords = wordEntries.map(entry => entry.word.toLowerCase());
+    const missingWords = highlightedWords.filter(word => !foundWords.includes(word));
+    
+    if (missingWords.length > 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Only check lines that start with bullet points and include missing words
+        if (line.startsWith('•') || line.match(/^\s*•/)) {
+          for (const missingWord of missingWords) {
+            if (line.toLowerCase().includes(missingWord)) {
+              // Check if this line might be a word entry for a missing word
+              const wordPattern = new RegExp(`\\b${missingWord}\\b`, 'i');
+              const match = line.match(wordPattern);
+              
+              if (match) {
+                wordEntries.push({
+                  word: missingWord,
+                  lineIndex: i,
+                  content: {
+                    definition: '',
+                    examples: [],
+                    wordBlock: line
+                  }
+                });
+              }
+            }
+          }
         }
       }
     }
