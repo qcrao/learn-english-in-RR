@@ -90,12 +90,14 @@ export const insertCompletion = async (
 
   // Get existing parsed words
   const existingWords = getExistingParsedWords(parentUid);
+  console.log("existingWords: ", existingWords);
 
   // Remove ^^ marks from already parsed words
   const updatedContent = removeMarksFromParsedWords(content, existingWords);
 
   // Check if there are any remaining marked words
   const remainingMarkedWords = updatedContent.match(/\^\^([^\^]+)\^\^/g);
+  console.log("remainingMarkedWords: ", remainingMarkedWords);
 
   if (!remainingMarkedWords) {
     AppToaster.show({
@@ -134,7 +136,9 @@ export const insertCompletion = async (
   }
 
   const intervalId = await displaySpinner(targetUid);
+  console.log("intervalId: ", intervalId);
 
+  console.log("targetUid: ", targetUid);
   const aiResponse = await aiCompletion(
     model,
     prompt,
@@ -370,6 +374,7 @@ export function initializeOpenAIAPI(API_KEY, baseURL) {
     });
   }
 }
+
 export async function openaiCompletion(
   aiClient,
   model,
@@ -395,6 +400,13 @@ export async function openaiCompletion(
     },
   ];
 
+  console.log("messages: ", messages);
+  console.log("model: ", model);
+  console.log("prompt: ", prompt);
+  console.log("content: ", content);
+  console.log("responseFormat: ", responseFormat);
+  console.log("in openaiCompletion targetUid: ", targetUid);
+
   try {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
@@ -417,6 +429,7 @@ export async function openaiCompletion(
     let streamEltCopy = "";
 
     if (streamResponse && responseFormat === "text") {
+      console.log("in openaiCompletion streamResponse: ", streamResponse);
       const streamElt = insertParagraphForStream(targetUid);
 
       try {
