@@ -1,9 +1,10 @@
 import { systemPrompt } from "../../systemPrompt";
 import { insertCompletion } from "../ai/commands";
 import { AppToaster } from "../components/toaster";
-import { motherLanguage } from "../config";
+import { motherLanguage, ankiDeckName } from "../config";
 import { createChildBlock, getFocusAndSelection, getBlockAndChildrenContentByUid } from "./utils";
 import { createAnkiCardFromBlock } from "./anki";
+import axios from "axios";
 
 export const CONTEXT_MENU_COMMAND_LABEL = "Extract new words";
 export const ANKI_CONTEXT_MENU_COMMAND_LABEL = "Send to Anki";
@@ -48,6 +49,12 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
   // Add the send to Anki function
   const sendToAnki = async (uid) => {
     try {
+      AppToaster.show({
+        message: "Sending to Anki...",
+        intent: "primary",
+        timeout: 2000,
+      });
+      
       const blockContent = getBlockAndChildrenContentByUid(uid);
       
       if (!blockContent) {
@@ -59,15 +66,38 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         return;
       }
       
-      const success = await createAnkiCardFromBlock(blockContent);
+      // Check if the block contains highlighted words
+      const hasHighlightedWords = 
+        blockContent.includes('^^') || 
+        blockContent.includes('🔊');
       
-      if (success) {
+      if (!hasHighlightedWords) {
         AppToaster.show({
-          message: "Successfully sent to Anki!",
-          intent: "success",
+          message: "No highlighted words found in the selected block. Please highlight words with ^^ or 🔊.",
+          intent: "warning",
           timeout: 3000,
         });
+        return;
       }
+      
+      // Check if Anki Connect is available
+      try {
+        await axios.post('http://localhost:8765', {
+          action: "version",
+          version: 6
+        });
+      } catch (error) {
+        AppToaster.show({
+          message: "Error connecting to Anki. Please make sure Anki is running with AnkiConnect plugin installed.",
+          intent: "danger",
+          timeout: 5000,
+        });
+        return;
+      }
+      
+      const success = await createAnkiCardFromBlock(blockContent);
+      
+      // The success message is now handled in the createAnkiCardFromBlock function
     } catch (error) {
       console.error("Error sending to Anki:", error);
       AppToaster.show({

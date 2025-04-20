@@ -67,6 +67,9 @@ export function getBlockAndChildrenContentByUid(uid) {
   const blockContent = getBlockContentByUid(uid);
   let content = blockContent || "";
   
+  // Check if this is a paragraph with highlighted words
+  const containsHighlightedWords = content.includes('^^') || content.includes('🔊');
+  
   // Get the children blocks
   const children = window.roamAlphaAPI.q(`
     [:find (pull ?block [:block/string :block/uid :block/order])
@@ -83,6 +86,9 @@ export function getBlockAndChildrenContentByUid(uid) {
     sortedChildren.forEach(child => {
       const childUid = child[0].uid;
       const childContent = child[0].string;
+      
+      // For paragraphs with highlighted words, don't skip any child blocks
+      // We need all the information for proper Anki cards
       content += "\n- " + childContent;
       
       // Recursively get nested children
@@ -113,6 +119,8 @@ function getNestedChildrenContent(parentUid, depth) {
     sortedChildren.forEach(child => {
       const childUid = child[0].uid;
       const childContent = child[0].string;
+      
+      // Include all nested content for proper parsing
       content += "\n" + "  ".repeat(depth) + "- " + childContent;
       
       // Recursively get nested children with increased depth

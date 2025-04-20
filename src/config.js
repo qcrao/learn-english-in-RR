@@ -8,6 +8,7 @@ export let defaultOpenAIModel;
 
 export let streamResponse = true;
 export let motherLanguage = "zh";
+export let ankiDeckName = "English Vocabulary";
 
 export function loadInitialSettings(extensionAPI) {
   OPENAI_API_KEY = extensionAPI.settings.get("openai-api-key");
@@ -20,6 +21,9 @@ export function loadInitialSettings(extensionAPI) {
 
   motherLanguage = extensionAPI.settings.get("mother-language-input");
   if (!motherLanguage) motherLanguage = "zh";
+  
+  const savedAnkiDeck = extensionAPI.settings.get("anki-deck-name");
+  if (savedAnkiDeck) ankiDeckName = savedAnkiDeck;
 }
 
 export function initPanelConfig(extensionAPI) {
@@ -62,6 +66,19 @@ export function initPanelConfig(extensionAPI) {
           type: "input",
           onChange: (evt) => {
             motherLanguage = getValidLanguageCode(evt.target.value);
+          },
+        },
+      },
+      {
+        id: "anki-deck-name",
+        name: "Anki Deck Name",
+        description: "Name of the Anki deck to add cards to",
+        action: {
+          type: "input",
+          placeholder: "English Vocabulary",
+          onChange: (evt) => {
+            ankiDeckName = evt.target.value || "English Vocabulary";
+            extensionAPI.settings.set("anki-deck-name", ankiDeckName);
           },
         },
       },
