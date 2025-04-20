@@ -13,20 +13,15 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
   const deckName = customDeckName || ankiDeckName;
   
   try {
-    console.log("Starting Anki card creation");
     // Parse the content from Roam Research format
     const lines = blockContent.split('\n');
     
     // The first line may be the context sentence with multiple highlighted words
     const firstLine = lines[0].trim();
-    console.log("First line:", firstLine);
     
     // Find all highlighted words in the context
     const highlightedWordsMatches = [...firstLine.matchAll(/\^\^([^^]+?)\^\^/g)];
     const speechIconMatches = [...firstLine.matchAll(/([a-zA-Z0-9 -]+)\s+🔊/g)];
-    
-    console.log("Highlighted words matches:", JSON.stringify(highlightedWordsMatches.map(m => m[1])));
-    console.log("Speech icon matches:", JSON.stringify(speechIconMatches.map(m => m[1])));
     
     // Combine both match types
     const allMatches = [
@@ -41,8 +36,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         index: match.index
       }))
     ].sort((a, b) => a.index - b.index);
-    
-    console.log("All word matches:", JSON.stringify(allMatches));
     
     // If no highlighted words found, return with error
     if (allMatches.length === 0) {
@@ -106,8 +99,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
            line.includes('adverb') ||
            line.includes('adj'))) {
         
-        console.log("Checking potential word entry line:", line);
-        
         // Extract the word from the line - handle both formats
         // Try to match highlighted words first
         let wordMatch = line.match(/\^\^([^^]+)\^\^/);
@@ -124,7 +115,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         
         if (wordMatch) {
           const extractedWord = wordMatch[1].trim();
-          console.log("Extracted word from entry line:", extractedWord);
           
           wordEntries.push({
             word: extractedWord,
@@ -135,22 +125,14 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               wordBlock: line
             }
           });
-        } else {
-          console.log("No word match found in potential entry line:", line);
         }
       }
     }
-    
-    console.log("Initial word entries:", JSON.stringify(wordEntries.map(e => e.word)));
     
     // If we haven't found entries for all highlighted words, try a more flexible approach
     const highlightedWords = allMatches.map(match => match.word.toLowerCase());
     const foundWords = wordEntries.map(entry => entry.word.toLowerCase());
     const missingWords = highlightedWords.filter(word => !foundWords.includes(word));
-    
-    console.log("Highlighted words:", JSON.stringify(highlightedWords));
-    console.log("Found words:", JSON.stringify(foundWords));
-    console.log("Missing words:", JSON.stringify(missingWords));
     
     if (missingWords.length > 0) {
       // First, try to find multi-word phrases in all bullet point lines
@@ -162,7 +144,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
           for (const missingWord of missingWords) {
             // For multi-word phrases, check if any parts of the phrase are in the line
             if (missingWord.includes(' ')) {
-              console.log(`Checking line ${i} for multi-word phrase "${missingWord}":`, line);
               
               // Split the multi-word phrase into individual words
               const phraseWords = missingWord.split(' ');
@@ -174,20 +155,17 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               for (const mainWord of mainWords) {
                 if (line.toLowerCase().includes(mainWord.toLowerCase())) {
                   mainWordMatches++;
-                  console.log(`Found phrase component "${mainWord}" in line:`, line);
                 }
               }
               
               // If we found most of the significant words, consider it a match
               if (mainWords.length > 0 && mainWordMatches / mainWords.length >= 0.5) {
-                console.log(`Found potential match for "${missingWord}" in line:`, line);
                 
                 // Extract the word from the line - handle both formats
                 let wordMatch = line.match(/\^\^([^^]+)\^\^/) || line.match(/([a-zA-Z0-9 -]+)\s+(noun|verb|adjective|adverb|adj)/i);
                 
                 if (wordMatch) {
                   const foundWord = wordMatch[1].trim();
-                  console.log(`Extracted word from line: "${foundWord}"`);
                   
                   wordEntries.push({
                     word: missingWord,  // Use the original missing word for the card
@@ -206,7 +184,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
             } else {
               // Original single-word handling
               if (line.toLowerCase().includes(missingWord)) {
-                console.log(`Line ${i} contains missing word "${missingWord}":`, line);
                 
                 // For multi-word phrases, we need to be careful with the regex pattern
                 // Escape special regex characters and then create a pattern that handles word boundaries correctly
@@ -216,17 +193,14 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
                 if (missingWord.includes(' ')) {
                   // For multi-word phrases, we don't use word boundaries because they would break the match
                   wordPattern = new RegExp(escapedWord, 'i');
-                  console.log(`Using multi-word pattern for "${missingWord}":`, wordPattern);
                 } else {
                   // For single words, we use word boundaries as before
                   wordPattern = new RegExp(`\\b${escapedWord}\\b`, 'i');
-                  console.log(`Using single-word pattern for "${missingWord}":`, wordPattern);
                 }
                 
                 const match = line.match(wordPattern);
                 
                 if (match) {
-                  console.log(`Match found for "${missingWord}" using pattern:`, match[0]);
                   wordEntries.push({
                     word: missingWord,
                     lineIndex: i,
@@ -236,8 +210,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
                       wordBlock: line
                     }
                   });
-                } else {
-                  console.log(`No match found for "${missingWord}" in line:`, line);
                 }
               }
             }
@@ -250,10 +222,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       const stillMissingWords = missingWords.filter(word => !updatedFoundWords.includes(word));
       
       if (stillMissingWords.length > 0) {
-        console.log("Still missing words after attempts:", JSON.stringify(stillMissingWords));
         
         for (const missingWord of stillMissingWords) {
-          console.log(`Creating fallback entry for "${missingWord}"`);
           
           // Create a generic word entry with the word itself
           wordEntries.push({
@@ -268,8 +238,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         }
       }
     }
-    
-    console.log("Final word entries after processing missing words:", JSON.stringify(wordEntries.map(e => e.word)));
     
     // Deduplicate entries - keep only the best entry for each word
     const uniqueWordEntries = [];
@@ -292,8 +260,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       }
     }
     
-    console.log("Unique word entries after deduplication:", JSON.stringify(uniqueWordEntries.map(e => e.word)));
-    
     // Set the wordEntries to the deduplicated list
     const finalWordEntries = uniqueWordEntries;
     
@@ -302,11 +268,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       const entry = finalWordEntries[i];
       const nextEntryIndex = i < finalWordEntries.length - 1 ? finalWordEntries[i + 1].lineIndex : lines.length;
       
-      console.log(`Collecting info for entry "${entry.word}" from line ${entry.lineIndex + 1} to ${nextEntryIndex}`);
-      
       // Skip entries with duplicate line indexes (we only need to process one entry per line index)
       if (i > 0 && entry.lineIndex === finalWordEntries[i-1].lineIndex) {
-        console.log(`Skipping duplicate line index entry for "${entry.word}"`);
         continue;
       }
       
@@ -325,19 +288,16 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         
         // Track section changes
         if (line.includes('Examples') || line.includes('**Examples**')) {
-          console.log(`Found Examples section at line ${j}`);
           inExamplesSection = true;
           inSynonymsSection = false;
           inAntonymsSection = false;
           continue;
         } else if (line.includes('Synonyms') || line.includes('**Synonyms**')) {
-          console.log(`Found Synonyms section at line ${j}`);
           inExamplesSection = false;
           inSynonymsSection = true;
           inAntonymsSection = false;
           continue;
         } else if (line.includes('Antonyms') || line.includes('**Antonyms**')) {
-          console.log(`Found Antonyms section at line ${j}`);
           inExamplesSection = false;
           inSynonymsSection = false;
           inAntonymsSection = true;
@@ -353,7 +313,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
             .replace(/🔊/g, '')
             .trim();
           
-          console.log(`Found definition for "${entry.word}": ${definitionText}`);
           entry.content.definition = definitionText;
           
           // For multi-word phrases, also check the next few lines for additional definition text
@@ -366,7 +325,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
                 .trim();
               
               if (additionalText) {
-                console.log(`Found additional definition text: ${additionalText}`);
                 entry.content.definition += ' ' + additionalText;
               }
               k++;
@@ -392,7 +350,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
                 !example.includes('Antonyms') &&
                 !example.includes('Etymology') &&
                 !example.includes('Usage Notes')) {
-              console.log(`Found example for "${entry.word}": ${example}`);
               entry.content.examples.push(example);
             }
           }
@@ -404,7 +361,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
             (line.toLowerCase().includes(entry.word.toLowerCase()) || 
              entry.word.split(' ').every(word => line.toLowerCase().includes(word.toLowerCase())))) {
           if (!entry.content.definition && !line.includes('Examples') && !line.includes('Synonyms')) {
-            console.log(`Found direct definition for "${entry.word}": ${line}`);
             entry.content.definition = line
               .replace(/\^\^([^^]+)\^\^/g, '$1')
               .replace(/🔊/g, '')
@@ -412,8 +368,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
           }
         }
       }
-      
-      console.log(`Collected for "${entry.word}": ${entry.content.definition ? 'Definition found' : 'No definition'}, ${entry.content.examples.length} examples`);
     }
     
     // Now create cards for each highlighted word that matches a word entry
@@ -430,7 +384,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       
       // If no exact match found and this is a multi-word phrase, try to find partial matches
       if (!wordEntry && word.includes(' ')) {
-        console.log(`No exact match found for "${word}". Trying partial matches...`);
         
         // Get the individual words from the phrase
         const phraseWords = word.split(' ').filter(w => w.length > 2);
@@ -440,7 +393,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
           for (const phraseWord of phraseWords) {
             if (entry.word.toLowerCase().includes(phraseWord.toLowerCase()) ||
                 phraseWord.toLowerCase().includes(entry.word.toLowerCase())) {
-              console.log(`Found partial match: "${entry.word}" for phrase "${word}"`);
               
               // Create a copy of the entry with the original phrase as the word
               wordEntry = {
@@ -462,11 +414,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       
       // Skip if we didn't find the word entry
       if (!wordEntry) {
-        console.log(`No word entry found for "${word}". Skipping card creation.`);
         continue;
       }
-      
-      console.log(`Creating card for "${word}" using entry:`, JSON.stringify(wordEntry.content));
       
       // Create the front of the card with context
       const front = `
@@ -575,7 +524,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       if (response.data.error) {
         console.error(`Error creating card for "${word}":`, response.data.error);
       } else {
-        console.log(`Successfully created card for "${word}"`);
         createdCards++;
       }
     }
