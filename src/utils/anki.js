@@ -480,11 +480,15 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       // Create the back of the card with all information
       const back = `
 <div style="text-align: left;">
-  <p><b>Word Block:</b> ${wordEntry.content.wordBlock.replace(/\^\^([^^]+)\^\^/g, '$1').replace(/🔊/g, '')}</p>
-  ${phonetic ? `<p><b>Pronunciation:</b> ${phonetic}</p>` : ''}
-  ${partOfSpeech ? `<p><b>Part of Speech:</b> ${partOfSpeech}</p>` : ''}
-  ${wordEntry.content.definition ? `<p><b>Definition:</b> ${wordEntry.content.definition}</p>` : ''}
-  ${translation ? `<p><b>Translation:</b> ${translation}</p>` : ''}
+  <p><b>Word Block:</b> ${wordEntry.content.wordBlock
+    .replace(/\^\^([^^]+)\^\^/g, '$1')
+    .replace(/🔊/g, '')
+    .replace(/^[•-]\s+[a-zA-Z0-9 -]+\s+/, '')
+    .replace(/#[a-zA-Z0-9-_]+/g, '')
+    .replace(/`([^`]+)`/g, '<mark style="background-color: #f2c744; color: black;">$1</mark>')
+  }</p>
+  ${wordEntry.content.definition ? 
+    `<p><b>Definition:</b> ${wordEntry.content.definition.replace(/^-\s*/, '')}</p>` : ''}
   ${wordEntry.content.examples.length > 0 ? 
     `<p><b>Examples:</b></p>
     <ul>${wordEntry.content.examples.map(ex => `<li>${ex}</li>`).join('')}</ul>` : ''}
@@ -514,9 +518,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               Back: back + css
             },
             options: {
-              allowDuplicate: false
+              allowDuplicate: true
             },
-            tags: tags
           }
         }
       });
