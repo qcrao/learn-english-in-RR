@@ -13,15 +13,20 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
   const deckName = customDeckName || ankiDeckName;
   
   try {
+    console.log("Starting Anki card creation");
     // Parse the content from Roam Research format
     const lines = blockContent.split('\n');
     
     // The first line may be the context sentence with multiple highlighted words
     const firstLine = lines[0].trim();
+    console.log("First line:", firstLine);
     
     // Find all highlighted words in the context
     const highlightedWordsMatches = [...firstLine.matchAll(/\^\^([^^]+?)\^\^/g)];
-    const speechIconMatches = [...firstLine.matchAll(/([a-zA-Z]+)\s+🔊/g)];
+    const speechIconMatches = [...firstLine.matchAll(/([a-zA-Z0-9 -]+)\s+🔊/g)];
+    
+    console.log("Highlighted words matches:", JSON.stringify(highlightedWordsMatches.map(m => m[1])));
+    console.log("Speech icon matches:", JSON.stringify(speechIconMatches.map(m => m[1])));
     
     // Combine both match types
     const allMatches = [
@@ -36,6 +41,8 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         index: match.index
       }))
     ].sort((a, b) => a.index - b.index);
+    
+    console.log("All word matches:", JSON.stringify(allMatches));
     
     // If no highlighted words found, return with error
     if (allMatches.length === 0) {
@@ -92,21 +99,35 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       const line = lines[i].trim();
       
       // Check if this is a word entry line (either with ^^ or 🔊)
-      // First try to match word entries with part of speech
-      if ((line.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/) || 
-           line.match(/\^\^([^^]+)\^\^/) || 
-           line.match(/([a-zA-Z]+)\s+🔊/)) && 
+      if ((line.startsWith('•') || line.startsWith('-') || line.match(/^\s*•/) || line.match(/^\s*-/)) &&
           (line.includes('noun') || 
            line.includes('verb') || 
            line.includes('adjective') || 
            line.includes('adverb') ||
            line.includes('adj'))) {
         
-        // Extract the word from the line
-        let wordMatch = line.match(/\^\^([^^]+)\^\^/) || line.match(/([a-zA-Z]+)\s+🔊/);
+        console.log("Checking potential word entry line:", line);
+        
+        // Extract the word from the line - handle both formats
+        // Try to match highlighted words first
+        let wordMatch = line.match(/\^\^([^^]+)\^\^/);
+        
+        // If no match found, try alternate format with speech icon
+        if (!wordMatch) {
+          wordMatch = line.match(/([a-zA-Z0-9 -]+)\s+🔊/);
+        }
+        
+        // If still no match, try to extract word before part of speech
+        if (!wordMatch) {
+          wordMatch = line.match(/[•-]\s+([a-zA-Z0-9 -]+)\s+(noun|verb|adjective|adverb|adj)/i);
+        }
+        
         if (wordMatch) {
+          const extractedWord = wordMatch[1].trim();
+          console.log("Extracted word from entry line:", extractedWord);
+          
           wordEntries.push({
-            word: wordMatch[1].trim(),
+            word: extractedWord,
             lineIndex: i,
             content: {
               definition: '',
@@ -114,79 +135,243 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               wordBlock: line
             }
           });
+        } else {
+          console.log("No word match found in potential entry line:", line);
         }
       }
     }
+    
+    console.log("Initial word entries:", JSON.stringify(wordEntries.map(e => e.word)));
     
     // If we haven't found entries for all highlighted words, try a more flexible approach
     const highlightedWords = allMatches.map(match => match.word.toLowerCase());
     const foundWords = wordEntries.map(entry => entry.word.toLowerCase());
     const missingWords = highlightedWords.filter(word => !foundWords.includes(word));
     
+    console.log("Highlighted words:", JSON.stringify(highlightedWords));
+    console.log("Found words:", JSON.stringify(foundWords));
+    console.log("Missing words:", JSON.stringify(missingWords));
+    
     if (missingWords.length > 0) {
+      // First, try to find multi-word phrases in all bullet point lines
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Only check lines that start with bullet points and include missing words
-        if (line.startsWith('•') || line.match(/^\s*•/)) {
+        // Only check lines that start with bullet points
+        if (line.startsWith('•') || line.startsWith('-') || line.match(/^\s*•/) || line.match(/^\s*-/)) {
           for (const missingWord of missingWords) {
-            if (line.toLowerCase().includes(missingWord)) {
-              // Check if this line might be a word entry for a missing word
-              const wordPattern = new RegExp(`\\b${missingWord}\\b`, 'i');
-              const match = line.match(wordPattern);
+            // For multi-word phrases, check if any parts of the phrase are in the line
+            if (missingWord.includes(' ')) {
+              console.log(`Checking line ${i} for multi-word phrase "${missingWord}":`, line);
               
-              if (match) {
-                wordEntries.push({
-                  word: missingWord,
-                  lineIndex: i,
-                  content: {
-                    definition: '',
-                    examples: [],
-                    wordBlock: line
-                  }
-                });
+              // Split the multi-word phrase into individual words
+              const phraseWords = missingWord.split(' ');
+              
+              // Check if all or key parts of the phrase are in the line
+              const mainWords = phraseWords.filter(w => w.length > 2);  // Filter out small words like "of", "the", etc.
+              let mainWordMatches = 0;
+              
+              for (const mainWord of mainWords) {
+                if (line.toLowerCase().includes(mainWord.toLowerCase())) {
+                  mainWordMatches++;
+                  console.log(`Found phrase component "${mainWord}" in line:`, line);
+                }
+              }
+              
+              // If we found most of the significant words, consider it a match
+              if (mainWords.length > 0 && mainWordMatches / mainWords.length >= 0.5) {
+                console.log(`Found potential match for "${missingWord}" in line:`, line);
+                
+                // Extract the word from the line - handle both formats
+                let wordMatch = line.match(/\^\^([^^]+)\^\^/) || line.match(/([a-zA-Z0-9 -]+)\s+(noun|verb|adjective|adverb|adj)/i);
+                
+                if (wordMatch) {
+                  const foundWord = wordMatch[1].trim();
+                  console.log(`Extracted word from line: "${foundWord}"`);
+                  
+                  wordEntries.push({
+                    word: missingWord,  // Use the original missing word for the card
+                    lineIndex: i,
+                    content: {
+                      definition: '',
+                      examples: [],
+                      wordBlock: line
+                    }
+                  });
+                  
+                  // Break out of the loop after finding a match
+                  break;
+                }
+              }
+            } else {
+              // Original single-word handling
+              if (line.toLowerCase().includes(missingWord)) {
+                console.log(`Line ${i} contains missing word "${missingWord}":`, line);
+                
+                // For multi-word phrases, we need to be careful with the regex pattern
+                // Escape special regex characters and then create a pattern that handles word boundaries correctly
+                const escapedWord = missingWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                let wordPattern;
+                
+                if (missingWord.includes(' ')) {
+                  // For multi-word phrases, we don't use word boundaries because they would break the match
+                  wordPattern = new RegExp(escapedWord, 'i');
+                  console.log(`Using multi-word pattern for "${missingWord}":`, wordPattern);
+                } else {
+                  // For single words, we use word boundaries as before
+                  wordPattern = new RegExp(`\\b${escapedWord}\\b`, 'i');
+                  console.log(`Using single-word pattern for "${missingWord}":`, wordPattern);
+                }
+                
+                const match = line.match(wordPattern);
+                
+                if (match) {
+                  console.log(`Match found for "${missingWord}" using pattern:`, match[0]);
+                  wordEntries.push({
+                    word: missingWord,
+                    lineIndex: i,
+                    content: {
+                      definition: '',
+                      examples: [],
+                      wordBlock: line
+                    }
+                  });
+                } else {
+                  console.log(`No match found for "${missingWord}" in line:`, line);
+                }
               }
             }
           }
         }
       }
+      
+      // If still missing some words, create fallback entries for them
+      const updatedFoundWords = wordEntries.map(entry => entry.word.toLowerCase());
+      const stillMissingWords = missingWords.filter(word => !updatedFoundWords.includes(word));
+      
+      if (stillMissingWords.length > 0) {
+        console.log("Still missing words after attempts:", JSON.stringify(stillMissingWords));
+        
+        for (const missingWord of stillMissingWords) {
+          console.log(`Creating fallback entry for "${missingWord}"`);
+          
+          // Create a generic word entry with the word itself
+          wordEntries.push({
+            word: missingWord,
+            lineIndex: -1,  // Indicates it's a fallback entry
+            content: {
+              definition: `Definition for "${missingWord}" not found in notes.`,
+              examples: [],
+              wordBlock: `- ${missingWord} (missing entry)`
+            }
+          });
+        }
+      }
     }
     
+    console.log("Final word entries after processing missing words:", JSON.stringify(wordEntries.map(e => e.word)));
+    
+    // Deduplicate entries - keep only the best entry for each word
+    const uniqueWordEntries = [];
+    const seenWords = new Set();
+    
+    // First, sort entries by quality (entries with definitions and examples first)
+    const sortedEntries = [...wordEntries].sort((a, b) => {
+      // Entries with both definition and examples are best
+      const aScore = (a.content.definition ? 2 : 0) + (a.content.examples.length > 0 ? 1 : 0);
+      const bScore = (b.content.definition ? 2 : 0) + (b.content.examples.length > 0 ? 1 : 0);
+      return bScore - aScore;
+    });
+    
+    // Then keep only the best entry for each word
+    for (const entry of sortedEntries) {
+      const wordKey = entry.word.toLowerCase();
+      if (!seenWords.has(wordKey)) {
+        seenWords.add(wordKey);
+        uniqueWordEntries.push(entry);
+      }
+    }
+    
+    console.log("Unique word entries after deduplication:", JSON.stringify(uniqueWordEntries.map(e => e.word)));
+    
+    // Set the wordEntries to the deduplicated list
+    const finalWordEntries = uniqueWordEntries;
+    
     // Second pass: collect information for each word
-    for (let i = 0; i < wordEntries.length; i++) {
-      const entry = wordEntries[i];
-      const nextEntryIndex = i < wordEntries.length - 1 ? wordEntries[i + 1].lineIndex : lines.length;
+    for (let i = 0; i < finalWordEntries.length; i++) {
+      const entry = finalWordEntries[i];
+      const nextEntryIndex = i < finalWordEntries.length - 1 ? finalWordEntries[i + 1].lineIndex : lines.length;
+      
+      console.log(`Collecting info for entry "${entry.word}" from line ${entry.lineIndex + 1} to ${nextEntryIndex}`);
+      
+      // Skip entries with duplicate line indexes (we only need to process one entry per line index)
+      if (i > 0 && entry.lineIndex === finalWordEntries[i-1].lineIndex) {
+        console.log(`Skipping duplicate line index entry for "${entry.word}"`);
+        continue;
+      }
+      
+      // If entry is a multi-word phrase that matched but might need more specific handling
+      const isMultiWordPhrase = entry.word.includes(' ');
       
       // Look for definition and examples for this word
-      for (let j = entry.lineIndex + 1; j < nextEntryIndex; j++) {
+      let inExamplesSection = false;
+      let inSynonymsSection = false;
+      let inAntonymsSection = false;
+      
+      // For multi-word phrases, we need to check a few lines after the matching entry
+      // to get the definition and examples associated with it
+      for (let j = entry.lineIndex + 1; j < lines.length && j < nextEntryIndex + 10; j++) {
         const line = lines[j].trim();
-        
-        // Find definition
-        if (line.includes('Definition:') || line.includes('**Definition**:')) {
-          entry.content.definition = line
-            .replace(/\*\*Definition\*\*:/, '')
-            .replace(/Definition:/, '')
-            .replace(/\^\^([^^]+)\^\^/g, '$1')
-            .replace(/🔊/g, '')
-            .trim();
-        }
         
         // Track section changes
         if (line.includes('Examples') || line.includes('**Examples**')) {
+          console.log(`Found Examples section at line ${j}`);
           inExamplesSection = true;
           inSynonymsSection = false;
           inAntonymsSection = false;
           continue;
         } else if (line.includes('Synonyms') || line.includes('**Synonyms**')) {
+          console.log(`Found Synonyms section at line ${j}`);
           inExamplesSection = false;
           inSynonymsSection = true;
           inAntonymsSection = false;
           continue;
         } else if (line.includes('Antonyms') || line.includes('**Antonyms**')) {
+          console.log(`Found Antonyms section at line ${j}`);
           inExamplesSection = false;
           inSynonymsSection = false;
           inAntonymsSection = true;
           continue;
+        }
+        
+        // Find definition - check for both formats
+        if (line.includes('Definition:') || line.includes('**Definition**:') || line.match(/\*\*Definition\*\*[:\s]+/)) {
+          const definitionText = line
+            .replace(/\*\*Definition\*\*[:\s]+/, '')
+            .replace(/Definition[:\s]+/, '')
+            .replace(/\^\^([^^]+)\^\^/g, '$1')
+            .replace(/🔊/g, '')
+            .trim();
+          
+          console.log(`Found definition for "${entry.word}": ${definitionText}`);
+          entry.content.definition = definitionText;
+          
+          // For multi-word phrases, also check the next few lines for additional definition text
+          if (isMultiWordPhrase && entry.content.definition) {
+            let k = j + 1;
+            while (k < lines.length && k < j + 5 && !lines[k].trim().match(/^(\*\*|\-)/) && !lines[k].trim().startsWith('•')) {
+              const additionalText = lines[k].trim()
+                .replace(/\^\^([^^]+)\^\^/g, '$1')
+                .replace(/🔊/g, '')
+                .trim();
+              
+              if (additionalText) {
+                console.log(`Found additional definition text: ${additionalText}`);
+                entry.content.definition += ' ' + additionalText;
+              }
+              k++;
+            }
+          }
         }
         
         // Collect examples only in the Examples section
@@ -200,17 +385,35 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
               .replace(/🔊/g, '')
               .trim();
             
+            // Skip lines that aren't actual examples
             if (example && 
                 !example.match(/^\*\*[^*]+\*\*/) && 
                 !example.includes('Synonyms') && 
                 !example.includes('Antonyms') &&
                 !example.includes('Etymology') &&
                 !example.includes('Usage Notes')) {
+              console.log(`Found example for "${entry.word}": ${example}`);
               entry.content.examples.push(example);
             }
           }
         }
+        
+        // For multi-word phrases, we need to look for definitions formatted differently
+        // or that might be embedded directly after the entry
+        if (isMultiWordPhrase && j === entry.lineIndex + 1 && line.includes('A') && 
+            (line.toLowerCase().includes(entry.word.toLowerCase()) || 
+             entry.word.split(' ').every(word => line.toLowerCase().includes(word.toLowerCase())))) {
+          if (!entry.content.definition && !line.includes('Examples') && !line.includes('Synonyms')) {
+            console.log(`Found direct definition for "${entry.word}": ${line}`);
+            entry.content.definition = line
+              .replace(/\^\^([^^]+)\^\^/g, '$1')
+              .replace(/🔊/g, '')
+              .trim();
+          }
+        }
       }
+      
+      console.log(`Collected for "${entry.word}": ${entry.content.definition ? 'Definition found' : 'No definition'}, ${entry.content.examples.length} examples`);
     }
     
     // Now create cards for each highlighted word that matches a word entry
@@ -221,12 +424,49 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       const word = wordMatch.word;
       
       // Find the corresponding word entry
-      const wordEntry = wordEntries.find(entry => 
+      let wordEntry = finalWordEntries.find(entry => 
         entry.word.toLowerCase() === word.toLowerCase()
       );
       
+      // If no exact match found and this is a multi-word phrase, try to find partial matches
+      if (!wordEntry && word.includes(' ')) {
+        console.log(`No exact match found for "${word}". Trying partial matches...`);
+        
+        // Get the individual words from the phrase
+        const phraseWords = word.split(' ').filter(w => w.length > 2);
+        
+        // Look for entries that contain any of the significant words from the phrase
+        for (const entry of finalWordEntries) {
+          for (const phraseWord of phraseWords) {
+            if (entry.word.toLowerCase().includes(phraseWord.toLowerCase()) ||
+                phraseWord.toLowerCase().includes(entry.word.toLowerCase())) {
+              console.log(`Found partial match: "${entry.word}" for phrase "${word}"`);
+              
+              // Create a copy of the entry with the original phrase as the word
+              wordEntry = {
+                ...entry,
+                word: word,  // Use the original highlighted phrase
+                content: {
+                  ...entry.content,
+                  // Add a note that this is a partial match
+                  definition: entry.content.definition || `Related to "${entry.word}"`
+                }
+              };
+              
+              break;
+            }
+          }
+          if (wordEntry) break;
+        }
+      }
+      
       // Skip if we didn't find the word entry
-      if (!wordEntry) continue;
+      if (!wordEntry) {
+        console.log(`No word entry found for "${word}". Skipping card creation.`);
+        continue;
+      }
+      
+      console.log(`Creating card for "${word}" using entry:`, JSON.stringify(wordEntry.content));
       
       // Create the front of the card with context
       const front = `
@@ -265,10 +505,27 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         translation = posMatches[2].replace(/`/g, '').trim();
       } else {
         // Try alternate format with Chinese characters
-        const translationMatch = wordEntry.content.wordBlock.match(/noun\s+([^\s#]+)/) || 
+        let translationMatch = wordEntry.content.wordBlock.match(/noun\s+([^\s#]+)/) || 
                                wordEntry.content.wordBlock.match(/verb\s+([^\s#]+)/) || 
-                               wordEntry.content.wordBlock.match(/adjective\s+([^\s#]+)/);
-        if (translationMatch) translation = translationMatch[1].trim();
+                               wordEntry.content.wordBlock.match(/adjective\s+([^\s#]+)/) ||
+                               wordEntry.content.wordBlock.match(/adverb\s+([^\s#]+)/) ||
+                               wordEntry.content.wordBlock.match(/phrase\s+([^\s#]+)/);
+        
+        // If no match yet, try a more flexible approach for multi-word phrases
+        if (!translationMatch && word.includes(' ')) {
+          // Look for Chinese characters after the part of speech tag
+          translationMatch = wordEntry.content.wordBlock.match(/(?:noun|verb|adjective|adverb|phrase)\s+([一-龥]+)/);
+        }
+        
+        if (translationMatch) {
+          translation = translationMatch[1].trim();
+        } else {
+          // Last resort: try to find any Chinese characters in the line
+          const chineseChars = wordEntry.content.wordBlock.match(/[一-龥]+/);
+          if (chineseChars) {
+            translation = chineseChars[0];
+          }
+        }
       }
       
       // Create the back of the card with all information
@@ -318,6 +575,7 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       if (response.data.error) {
         console.error(`Error creating card for "${word}":`, response.data.error);
       } else {
+        console.log(`Successfully created card for "${word}"`);
         createdCards++;
       }
     }
@@ -346,4 +604,4 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
     });
     return false;
   }
-} 
+}
