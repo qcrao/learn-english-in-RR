@@ -78,129 +78,118 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       .replace(/\^\^/g, '')
       .replace(/🔊/g, '')
       .replace(/#([a-zA-Z0-9-_]+)/g, '');
+
+    // Organize the lines into sections to correctly identify word entries and their content
+    let wordsWithContent = [];
+    let currentWordEntryIndex = -1;
+    let inExamplesSection = false;
+    let inSynonymsSection = false;
+    let inAntonymsSection = false;
     
-    // Now create cards for each highlighted word
-    let createdCards = 0;
-    
-    for (const wordMatch of allMatches) {
-      const word = wordMatch.word;
-      
-      // Find the word entry in the child blocks
-      const wordBlockIndex = lines.findIndex(line => 
-        (line.includes(`^^${word}^^`) || line.includes(`${word} 🔊`)) && 
-        (line.includes('noun') || line.includes('verb') || line.includes('adjective')) &&
-        !line.includes('In areas') // Exclude the context line if it contains these
-      );
-      
-      if (wordBlockIndex === -1) continue;
-      
-      // This is the word block (first level) with pronunciation, part of speech, etc.
-      const wordBlock = lines[wordBlockIndex].trim();
-      
-      // Extract phonetic, part of speech, and translation
-      let phonetic = '', partOfSpeech = '', translation = '';
-      
-      // Extract phonetic - check both formats
-      const phoneticMatch = wordBlock.match(/`([^`]+)`/) || wordBlock.match(/\/\s*([^\/]+)\//);
-      if (phoneticMatch) phonetic = phoneticMatch[1].trim();
-      
-      // Extract part of speech
-      const posMatches = wordBlock.match(/`([^`]+)`/g) || [];
-      if (posMatches.length > 1) {
-        partOfSpeech = posMatches[1].replace(/`/g, '').trim();
-      } else {
-        // Try alternate format
-        const posMatch = wordBlock.match(/\/[^\/]+\/\s+(\w+)/);
-        if (posMatch) partOfSpeech = posMatch[1].trim();
-      }
-      
-      // Extract translation
-      if (posMatches.length > 2) {
-        translation = posMatches[2].replace(/`/g, '').trim();
-      } else {
-        // Try alternate format with Chinese characters
-        const translationMatch = wordBlock.match(/noun\s+([^\s#]+)/) || 
-                                wordBlock.match(/verb\s+([^\s#]+)/) || 
-                                wordBlock.match(/adjective\s+([^\s#]+)/);
-        if (translationMatch) translation = translationMatch[1].trim();
-      }
-      
-      // Extract tags
-      const tagsMatch = wordBlock.match(/#([a-zA-Z0-9-_]+)/g);
-      const tags = tagsMatch ? tagsMatch.map(tag => tag.substring(1)) : [];
-      
-      // Find definition and examples related to this word
-      let definition = '';
-      let examples = [];
-      
-      // Find the definition section for this word (after word block)
-      for (let i = wordBlockIndex + 1; i < lines.length; i++) {
-        const line = lines[i].trim();
+    // First pass: identify all word entries and their indexes
+    const wordEntries = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      // Check if this is a word entry line (either with ^^ or 🔊)
+      if ((line.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/) || 
+           line.match(/\^\^([^^]+)\^\^/) || 
+           line.match(/([a-zA-Z]+)\s+🔊/)) && 
+          (line.includes('noun') || 
+           line.includes('verb') || 
+           line.includes('adjective') || 
+           line.includes('adverb'))) {
         
-        // Stop processing if we've reached another word entry
-        if (i > wordBlockIndex + 1 && (
-            (line.includes('^^') && line.includes('#new-words')) || 
-            (line.includes('🔊') && line.includes('#new-words')) ||
-            // Match a line with the bullet point format that starts a new word
-            (line.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/))
-        )) {
-          break;
+        // Extract the word from the line
+        let wordMatch = line.match(/\^\^([^^]+)\^\^/) || line.match(/([a-zA-Z]+)\s+🔊/);
+        if (wordMatch) {
+          wordEntries.push({
+            word: wordMatch[1].trim(),
+            lineIndex: i,
+            content: {
+              definition: '',
+              examples: [],
+              wordBlock: line
+            }
+          });
         }
+      }
+    }
+    
+    // Second pass: collect information for each word
+    for (let i = 0; i < wordEntries.length; i++) {
+      const entry = wordEntries[i];
+      const nextEntryIndex = i < wordEntries.length - 1 ? wordEntries[i + 1].lineIndex : lines.length;
+      
+      // Look for definition and examples for this word
+      for (let j = entry.lineIndex + 1; j < nextEntryIndex; j++) {
+        const line = lines[j].trim();
         
         // Find definition
         if (line.includes('Definition:') || line.includes('**Definition**:')) {
-          definition = line
+          entry.content.definition = line
             .replace(/\*\*Definition\*\*:/, '')
             .replace(/Definition:/, '')
-            .trim();
-          
-          // Clean up definition
-          definition = definition
             .replace(/\^\^([^^]+)\^\^/g, '$1')
             .replace(/🔊/g, '')
             .trim();
         }
         
-        // Find "Examples" heading section
+        // Track section changes
         if (line.includes('Examples') || line.includes('**Examples**')) {
-          // Start collecting examples from the next line
-          let j = i + 1;
-          while (j < lines.length) {
-            const exLine = lines[j].trim();
+          inExamplesSection = true;
+          inSynonymsSection = false;
+          inAntonymsSection = false;
+          continue;
+        } else if (line.includes('Synonyms') || line.includes('**Synonyms**')) {
+          inExamplesSection = false;
+          inSynonymsSection = true;
+          inAntonymsSection = false;
+          continue;
+        } else if (line.includes('Antonyms') || line.includes('**Antonyms**')) {
+          inExamplesSection = false;
+          inSynonymsSection = false;
+          inAntonymsSection = true;
+          continue;
+        }
+        
+        // Collect examples only in the Examples section
+        if (inExamplesSection && !inSynonymsSection && !inAntonymsSection) {
+          if (line.match(/^\s*\d+\./) || line.match(/^\s*•/) || line.match(/^\s*-/)) {
+            const example = line
+              .replace(/^\s*\d+\./, '')
+              .replace(/^\s*•/, '')
+              .replace(/^\s*-/, '')
+              .replace(/\^\^([^^]+)\^\^/g, '$1')
+              .replace(/🔊/g, '')
+              .trim();
             
-            // Stop collecting if we hit another main heading or another word
-            if ((exLine.match(/^\s*\*\*[^*]+\*\*/) && !exLine.includes('Example')) ||
-                (exLine.match(/^\s*•\s+([a-zA-Z]+)(\s+🔊|\s+\^\^)/)) ||
-                (exLine.includes('#new-words'))) {
-              break;
+            if (example && 
+                !example.match(/^\*\*[^*]+\*\*/) && 
+                !example.includes('Synonyms') && 
+                !example.includes('Antonyms') &&
+                !example.includes('Etymology') &&
+                !example.includes('Usage Notes')) {
+              entry.content.examples.push(example);
             }
-            
-            // Check for bullet points or numbered examples
-            if (exLine.match(/^\s*•/) || exLine.match(/^\s*-/) || exLine.match(/^\s*\d+\./)) {
-              let example = exLine
-                .replace(/^\s*•/, '')
-                .replace(/^\s*-/, '')
-                .replace(/^\s*\d+\./, '')
-                .replace(/\^\^([^^]+)\^\^/g, '$1')
-                .replace(/🔊/g, '')
-                .trim();
-              
-              // Only add if not empty and not a section marker
-              if (example && 
-                  !example.match(/^\*\*[^*]+\*\*/) && 
-                  !example.includes('Synonyms') && 
-                  !example.includes('Antonyms') &&
-                  !example.includes('Etymology') &&
-                  !example.includes('Usage Notes')) {
-                examples.push(example);
-              }
-            }
-            
-            j++;
           }
-          break; // Exit after finding Examples section
         }
       }
+    }
+    
+    // Now create cards for each highlighted word that matches a word entry
+    let createdCards = 0;
+    
+    // Process each highlighted word in the context
+    for (const wordMatch of allMatches) {
+      const word = wordMatch.word;
+      
+      // Find the corresponding word entry
+      const wordEntry = wordEntries.find(entry => 
+        entry.word.toLowerCase() === word.toLowerCase()
+      );
+      
+      // Skip if we didn't find the word entry
+      if (!wordEntry) continue;
       
       // Create the front of the card with context
       const front = `
@@ -212,17 +201,50 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
 </div>
       `.trim();
       
+      // Extract tags
+      const tagsMatch = wordEntry.content.wordBlock.match(/#([a-zA-Z0-9-_]+)/g);
+      const tags = tagsMatch ? tagsMatch.map(tag => tag.substring(1)) : [];
+      
+      // Extract phonetic, part of speech, and translation
+      let phonetic = '', partOfSpeech = '', translation = '';
+      
+      // Extract phonetic - check both formats
+      const phoneticMatch = wordEntry.content.wordBlock.match(/`([^`]+)`/) || 
+                           wordEntry.content.wordBlock.match(/\/\s*([^\/]+)\//);
+      if (phoneticMatch) phonetic = phoneticMatch[1].trim();
+      
+      // Extract part of speech
+      const posMatches = wordEntry.content.wordBlock.match(/`([^`]+)`/g) || [];
+      if (posMatches.length > 1) {
+        partOfSpeech = posMatches[1].replace(/`/g, '').trim();
+      } else {
+        // Try alternate format
+        const posMatch = wordEntry.content.wordBlock.match(/\/[^\/]+\/\s+(\w+)/);
+        if (posMatch) partOfSpeech = posMatch[1].trim();
+      }
+      
+      // Extract translation
+      if (posMatches.length > 2) {
+        translation = posMatches[2].replace(/`/g, '').trim();
+      } else {
+        // Try alternate format with Chinese characters
+        const translationMatch = wordEntry.content.wordBlock.match(/noun\s+([^\s#]+)/) || 
+                               wordEntry.content.wordBlock.match(/verb\s+([^\s#]+)/) || 
+                               wordEntry.content.wordBlock.match(/adjective\s+([^\s#]+)/);
+        if (translationMatch) translation = translationMatch[1].trim();
+      }
+      
       // Create the back of the card with all information
       const back = `
 <div style="text-align: left;">
-  <p><b>Word Block:</b> ${wordBlock.replace(/\^\^([^^]+)\^\^/g, '$1').replace(/🔊/g, '')}</p>
+  <p><b>Word Block:</b> ${wordEntry.content.wordBlock.replace(/\^\^([^^]+)\^\^/g, '$1').replace(/🔊/g, '')}</p>
   ${phonetic ? `<p><b>Pronunciation:</b> ${phonetic}</p>` : ''}
   ${partOfSpeech ? `<p><b>Part of Speech:</b> ${partOfSpeech}</p>` : ''}
-  ${definition ? `<p><b>Definition:</b> ${definition}</p>` : ''}
+  ${wordEntry.content.definition ? `<p><b>Definition:</b> ${wordEntry.content.definition}</p>` : ''}
   ${translation ? `<p><b>Translation:</b> ${translation}</p>` : ''}
-  ${examples.length > 0 ? 
+  ${wordEntry.content.examples.length > 0 ? 
     `<p><b>Examples:</b></p>
-    <ul>${examples.map(ex => `<li>${ex}</li>`).join('')}</ul>` : ''}
+    <ul>${wordEntry.content.examples.map(ex => `<li>${ex}</li>`).join('')}</ul>` : ''}
 </div>
       `.trim();
       
