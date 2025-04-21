@@ -148,16 +148,49 @@ function getNestedChildrenContent(parentUid, depth) {
 //   return uid;
 // }
 
-// Function to force expand a block in the UI by simulating a user click
+/**
+ * Block expansion and visibility utilities for Roam blocks
+ */
+
+/**
+ * Waits for a specific delay using Promise
+ * @param {number} ms - Milliseconds to wait
+ * @returns {Promise} 
+ */
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Find and retrieve a DOM element for a Roam block with a specific UID
+ * @param {string} uid - The block UID to find
+ * @param {number} maxAttempts - Maximum number of attempts (default: 5)
+ * @param {number} baseDelay - Base delay in ms between attempts (default: 100)
+ * @returns {Promise<Element|null>} - The found DOM element or null
+ */
+export async function findBlockElement(uid, maxAttempts = 5, baseDelay = 100) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const element = document.querySelector(`[id*="${uid}"]`);
+    if (element) return element;
+    
+    // Wait with exponential backoff
+    await delay(baseDelay * Math.pow(2, attempt));
+  }
+  
+  console.error(`Could not find DOM element for block with UID ${uid} after ${maxAttempts} attempts`);
+  return null;
+}
+
+/**
+ * Force expand a block in the UI by simulating a user click on the caret
+ * @param {string} uid - The block UID to expand
+ */
 export function forceExpandBlockInUI(uid) {
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       // Find the block element
-      const blockElement = document.querySelector(`[id*="${uid}"]`);
-      if (!blockElement) {
-        console.log(`Block ${uid} not found in DOM`);
-        return;
-      }
+      const blockElement = await findBlockElement(uid);
+      if (!blockElement) return;
       
       // Find the closest parent with the rm-block class
       const blockContainer = blockElement.closest('.rm-block');
@@ -191,16 +224,20 @@ export function forceExpandBlockInUI(uid) {
   }, 200); // Wait for the DOM to be updated
 }
 
-// Function to ensure a block and its parent blocks are all visible in the UI
+/**
+ * Ensure a block and all its parent blocks are visible/expanded in the UI
+ * @param {string} uid - The block UID to make visible
+ * @param {number} attemptLimit - Maximum recursive attempts
+ */
 export function ensureBlockIsVisible(uid, attemptLimit = 3) {
   let attempts = 0;
   
-  const tryMakeVisible = () => {
+  const tryMakeVisible = async () => {
     if (attempts >= attemptLimit) return;
     attempts++;
     
     try {
-      // Get the parent block
+      // Get the parent blocks
       const parentResult = window.roamAlphaAPI.q(`
         [:find (pull ?parent [:block/uid])
          :where
@@ -210,21 +247,24 @@ export function ensureBlockIsVisible(uid, attemptLimit = 3) {
       
       if (parentResult && parentResult.length > 0) {
         // For each parent, ensure it's open
-        parentResult.forEach(parent => {
+        for (const parent of parentResult) {
           const parentUid = parent[0].uid;
           if (parentUid) {
-            // Open this parent
+            // First use the API to open the block
             window.roamAlphaAPI.updateBlock({
               block: { uid: parentUid, open: true },
             });
             
-            // Also try to force-expand in the UI
+            // Then use UI interactions as a backup
             forceExpandBlockInUI(parentUid);
             
             // Recursively ensure parent's parents are also open
             ensureBlockIsVisible(parentUid, 1);
+            
+            // Give the UI time to update
+            await delay(50);
           }
-        });
+        }
       }
       
       // Ensure the target block itself is open
@@ -243,52 +283,62 @@ export function ensureBlockIsVisible(uid, attemptLimit = 3) {
   tryMakeVisible();
 }
 
-// 修改后的 createChildBlock 函数，支持递归创建子块
+/**
+ * Create a child block under a parent block in Roam
+ * @param {string} parentUid - The parent block's UID
+ * @param {string} content - Content for the new block
+ * @param {string|number} order - Order of the new block ("last", "first", or a number)
+ * @param {boolean} open - Whether the new block should be open/expanded
+ * @returns {string} - The UID of the newly created block
+ */
 export function createChildBlock(
   parentUid,
   content,
   order = "last",
   open = true
 ) {
+  // Generate a new UID for the block
   const uid = window.roamAlphaAPI.util.generateUID();
   
-  // First ensure the parent block is open with API
+  // First ensure the parent block is open using the API
   window.roamAlphaAPI.updateBlock({
     block: { uid: parentUid, open: true },
   });
   
-  // Try to force-expand the parent in the UI
+  // Try to force-expand the parent block in the UI as well
   forceExpandBlockInUI(parentUid);
   
-  // Now create the block
+  // Create the new block with trimmed content
   window.roamAlphaAPI.createBlock({
     location: { "parent-uid": parentUid, order: order },
     block: { string: content.trim(), uid: uid, open: open },
   });
   
-  // Force Roam to render the block by triggering a UI update with some delay
-  setTimeout(() => {
+  // After creating, ensure the block and its parents are properly visible
+  setTimeout(async () => {
     try {
       // Use our specialized function to ensure blocks are visible
       ensureBlockIsVisible(uid);
       
-      // Also try to force-expand the newly created block if it should be open
+      // If the block should be open, also try to expand it directly
       if (open) {
         forceExpandBlockInUI(uid);
       }
       
-      // Try to force a UI refresh by getting a reference to the DOM element
-      const blockElement = document.querySelector(`[id*="${uid}"]`);
+      // Try to verify the block exists in the DOM
+      const blockElement = await findBlockElement(uid, 5, 50);
       if (blockElement) {
-        // If we found the element, it's already rendered
         console.log(`Block ${uid} successfully rendered in DOM`);
       } else {
         console.log(`Block ${uid} created but not yet visible in DOM`);
+        
+        // One more attempt to ensure the parent is open
+        ensureBlockIsVisible(parentUid);
       }
     } catch (e) {
       console.log("Error ensuring blocks are open:", e);
     }
-  }, 150); // Increased delay for better reliability
+  }, 150);
   
   return uid;
 }
