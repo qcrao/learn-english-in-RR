@@ -2,7 +2,11 @@ import { systemPrompt } from "../../systemPrompt";
 import { insertCompletion } from "../ai/commands";
 import { AppToaster } from "../components/toaster";
 import { motherLanguage, ankiDeckName } from "../config";
-import { createChildBlock, getFocusAndSelection, getBlockAndChildrenContentByUid } from "./utils";
+import {
+  createChildBlock,
+  getFocusAndSelection,
+  getBlockAndChildrenContentByUid,
+} from "./utils";
 import { createAnkiCardFromBlock } from "./anki";
 import axios from "axios";
 
@@ -37,10 +41,10 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     }
 
     console.log("uid: ", uid);
-    const targetUid = createChildBlock(uid, ">>");
+    const targetUid = createChildBlock(uid, "");
 
     console.log("createChildBlock targetUid: ", targetUid);
-  
+
     insertCompletion(
       motherLanguage,
       uid,
@@ -58,9 +62,9 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         intent: "primary",
         timeout: 2000,
       });
-      
+
       const blockContent = getBlockAndChildrenContentByUid(uid);
-      
+
       if (!blockContent) {
         AppToaster.show({
           message: "No content found in the selected block.",
@@ -69,38 +73,39 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         });
         return;
       }
-      
+
       // Check if the block contains highlighted words
-      const hasHighlightedWords = 
-        blockContent.includes('^^') || 
-        blockContent.includes('🔊');
-      
+      const hasHighlightedWords =
+        blockContent.includes("^^") || blockContent.includes("🔊");
+
       if (!hasHighlightedWords) {
         AppToaster.show({
-          message: "No highlighted words found in the selected block. Please highlight words with ^^ or 🔊.",
+          message:
+            "No highlighted words found in the selected block. Please highlight words with ^^ or 🔊.",
           intent: "warning",
           timeout: 3000,
         });
         return;
       }
-      
+
       // Check if Anki Connect is available
       try {
-        await axios.post('http://localhost:8765', {
+        await axios.post("http://localhost:8765", {
           action: "version",
-          version: 6
+          version: 6,
         });
       } catch (error) {
         AppToaster.show({
-          message: "Error connecting to Anki. Please make sure Anki is running with AnkiConnect plugin installed.",
+          message:
+            "Error connecting to Anki. Please make sure Anki is running with AnkiConnect plugin installed.",
           intent: "danger",
           timeout: 5000,
         });
         return;
       }
-      
+
       const success = await createAnkiCardFromBlock(blockContent);
-      
+
       // The success message is now handled in the createAnkiCardFromBlock function
     } catch (error) {
       console.error("Error sending to Anki:", error);
@@ -122,7 +127,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
       }
     },
   });
-  
+
   // Add the Anki context menu option to command palette
   extensionAPI.ui.commandPalette.addCommand({
     label: "Send to Anki: create flashcard from current block",
@@ -151,7 +156,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     label: CONTEXT_MENU_COMMAND_LABEL,
     callback: commandCallback,
   });
-  
+
   // Add the Anki context menu command
   await window.roamAlphaAPI.ui.blockContextMenu.addCommand({
     label: ANKI_CONTEXT_MENU_COMMAND_LABEL,
