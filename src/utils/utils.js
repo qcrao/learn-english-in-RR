@@ -160,6 +160,19 @@ export function createChildBlock(
     location: { "parent-uid": parentUid, order: order },
     block: { string: content.trim(), uid: uid, open: open },
   });
+  
+  // Force Roam to render the block by triggering a UI update
+  setTimeout(() => {
+    try {
+      // Try to ensure the block is open (expanded) after creation
+      window.roamAlphaAPI.updateBlock({
+        block: { uid: uid, open: true },
+      });
+    } catch (e) {
+      console.log("Error ensuring block is open:", e);
+    }
+  }, 50);
+  
   return uid;
 }
 

@@ -430,25 +430,61 @@ export async function openaiCompletion(
 
     if (streamResponse && responseFormat === "text") {
       console.log("in openaiCompletion streamResponse: ", streamResponse);
-      const streamElt = insertParagraphForStream(targetUid);
+      
+      // Create a placeholder for the stream content
+      let streamElt = insertParagraphForStream(targetUid);
+      
+      // Set a flag to track if we found a real DOM element to work with
+      let streamElementFound = false;
+      
+      // Retry finding the element up to 5 times with increasing delays
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (streamElt && !streamElt.classList.contains('placeholder')) {
+          streamElementFound = true;
+          break;
+        }
+        
+        // Wait with exponential backoff
+        const waitTime = 200 * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        
+        // Try to get the element again
+        streamElt = document.querySelector(`[id*="${targetUid}"] .speech-stream`);
+      }
+      
+      // If we couldn't find the element after retries, log the error but continue
+      if (!streamElementFound) {
+        console.error(`Could not find stream element for block with UID ${targetUid}`);
+      }
 
       try {
         for await (const chunk of response) {
           if (isCanceledStreamGlobal) {
-            streamElt.innerHTML += "(⚠️ stream interrupted by user)";
+            if (streamElementFound) {
+              streamElt.innerHTML += "(⚠️ stream interrupted by user)";
+            }
             break;
           }
           respStr += chunk.choices[0]?.delta?.content || "";
-          streamElt.innerHTML += chunk.choices[0]?.delta?.content || "";
+          
+          if (streamElementFound) {
+            streamElt.innerHTML += chunk.choices[0]?.delta?.content || "";
+          }
         }
       } catch (e) {
         console.log("Error during OpenAI stream response: ", e);
         return "";
       } finally {
-        streamEltCopy = streamElt.innerHTML;
-        if (isCanceledStreamGlobal)
+        if (streamElementFound) {
+          streamEltCopy = streamElt.innerHTML;
+          if (!isCanceledStreamGlobal) {
+            streamElt.remove();
+          }
+        }
+        
+        if (isCanceledStreamGlobal) {
           console.log("GPT response stream interrupted.");
-        else streamElt.remove();
+        }
       }
     }
     return streamResponse && responseFormat === "text"

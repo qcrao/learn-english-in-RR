@@ -41,7 +41,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     }
 
     console.log("uid: ", uid);
-    const targetUid = createChildBlock(uid, "");
+    const targetUid = createChildBlock(uid, "...");
 
     console.log("createChildBlock targetUid: ", targetUid);
 
