@@ -41,7 +41,8 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     }
 
     console.log("uid: ", uid);
-    const targetUid = createChildBlock(uid, "...");
+    // Explicitly set open=true to ensure the block is expanded
+    const targetUid = createChildBlock(uid, "...", "last", true);
 
     console.log("createChildBlock targetUid: ", targetUid);
 

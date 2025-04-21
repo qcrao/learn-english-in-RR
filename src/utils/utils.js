@@ -148,6 +148,101 @@ function getNestedChildrenContent(parentUid, depth) {
 //   return uid;
 // }
 
+// Function to force expand a block in the UI by simulating a user click
+export function forceExpandBlockInUI(uid) {
+  setTimeout(() => {
+    try {
+      // Find the block element
+      const blockElement = document.querySelector(`[id*="${uid}"]`);
+      if (!blockElement) {
+        console.log(`Block ${uid} not found in DOM`);
+        return;
+      }
+      
+      // Find the closest parent with the rm-block class
+      const blockContainer = blockElement.closest('.rm-block');
+      if (!blockContainer) {
+        console.log(`Block container for ${uid} not found`);
+        return;
+      }
+      
+      // Check if the block is already expanded by looking for visible children
+      const childrenContainer = blockContainer.querySelector('.rm-block__children');
+      const isCollapsed = childrenContainer && 
+                         (childrenContainer.style.display === 'none' || 
+                          !childrenContainer.querySelector('.rm-block'));
+      
+      if (isCollapsed) {
+        // Find the expand/collapse button
+        const expandButton = blockContainer.querySelector('.rm-caret');
+        if (expandButton) {
+          // Simulate a click to expand
+          expandButton.click();
+          console.log(`Expanded block ${uid} by simulating UI click`);
+        } else {
+          console.log(`Expand button for block ${uid} not found`);
+        }
+      } else {
+        console.log(`Block ${uid} is already expanded or has no children`);
+      }
+    } catch (e) {
+      console.log(`Error force-expanding block ${uid}:`, e);
+    }
+  }, 200); // Wait for the DOM to be updated
+}
+
+// Function to ensure a block and its parent blocks are all visible in the UI
+export function ensureBlockIsVisible(uid, attemptLimit = 3) {
+  let attempts = 0;
+  
+  const tryMakeVisible = () => {
+    if (attempts >= attemptLimit) return;
+    attempts++;
+    
+    try {
+      // Get the parent block
+      const parentResult = window.roamAlphaAPI.q(`
+        [:find (pull ?parent [:block/uid])
+         :where
+         [?block :block/uid "${uid}"]
+         [?block :block/parents ?parent]]
+      `);
+      
+      if (parentResult && parentResult.length > 0) {
+        // For each parent, ensure it's open
+        parentResult.forEach(parent => {
+          const parentUid = parent[0].uid;
+          if (parentUid) {
+            // Open this parent
+            window.roamAlphaAPI.updateBlock({
+              block: { uid: parentUid, open: true },
+            });
+            
+            // Also try to force-expand in the UI
+            forceExpandBlockInUI(parentUid);
+            
+            // Recursively ensure parent's parents are also open
+            ensureBlockIsVisible(parentUid, 1);
+          }
+        });
+      }
+      
+      // Ensure the target block itself is open
+      window.roamAlphaAPI.updateBlock({
+        block: { uid: uid, open: true },
+      });
+      
+    } catch (e) {
+      console.log(`Error making block ${uid} visible:`, e);
+      // Try again after a delay
+      setTimeout(tryMakeVisible, 100 * Math.pow(2, attempts));
+    }
+  };
+  
+  // Start the process
+  tryMakeVisible();
+}
+
 // 修改后的 createChildBlock 函数，支持递归创建子块
 export function createChildBlock(
   parentUid,
@@ -156,22 +251,44 @@ export function createChildBlock(
   open = true
 ) {
   const uid = window.roamAlphaAPI.util.generateUID();
+  
+  // First ensure the parent block is open with API
+  window.roamAlphaAPI.updateBlock({
+    block: { uid: parentUid, open: true },
+  });
+  
+  // Try to force-expand the parent in the UI
+  forceExpandBlockInUI(parentUid);
+  
+  // Now create the block
   window.roamAlphaAPI.createBlock({
     location: { "parent-uid": parentUid, order: order },
     block: { string: content.trim(), uid: uid, open: open },
   });
   
-  // Force Roam to render the block by triggering a UI update
+  // Force Roam to render the block by triggering a UI update with some delay
   setTimeout(() => {
     try {
-      // Try to ensure the block is open (expanded) after creation
-      window.roamAlphaAPI.updateBlock({
-        block: { uid: uid, open: true },
-      });
+      // Use our specialized function to ensure blocks are visible
+      ensureBlockIsVisible(uid);
+      
+      // Also try to force-expand the newly created block if it should be open
+      if (open) {
+        forceExpandBlockInUI(uid);
+      }
+      
+      // Try to force a UI refresh by getting a reference to the DOM element
+      const blockElement = document.querySelector(`[id*="${uid}"]`);
+      if (blockElement) {
+        // If we found the element, it's already rendered
+        console.log(`Block ${uid} successfully rendered in DOM`);
+      } else {
+        console.log(`Block ${uid} created but not yet visible in DOM`);
+      }
     } catch (e) {
-      console.log("Error ensuring block is open:", e);
+      console.log("Error ensuring blocks are open:", e);
     }
-  }, 50);
+  }, 150); // Increased delay for better reliability
   
   return uid;
 }
