@@ -63,43 +63,82 @@ export function getBlockContentByUid(uid) {
   else return "";
 }
 
-export function getBlockAndChildrenContentByUid(uid) {
+export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
   const blockContent = getBlockContentByUid(uid);
-  let content = blockContent || "";
-  
-  // Check if this is a paragraph with highlighted words
-  const containsHighlightedWords = content.includes('^^') || content.includes('🔊');
-  
-  // Get the children blocks
-  const children = window.roamAlphaAPI.q(`
+
+  // Get all top-level child blocks (each representing a word/phrase)
+  const topLevelChildren = window.roamAlphaAPI.q(`
     [:find (pull ?block [:block/string :block/uid :block/order])
      :where 
      [?parent :block/uid "${uid}"]
      [?parent :block/children ?block]]
   `);
-  
-  if (children && children.length > 0) {
-    // Sort children by order
-    const sortedChildren = children.sort((a, b) => a[0].order - b[0].order);
-    
-    // Add children content with indentation
-    sortedChildren.forEach(child => {
-      const childUid = child[0].uid;
-      const childContent = child[0].string;
-      
-      // For paragraphs with highlighted words, don't skip any child blocks
-      // We need all the information for proper Anki cards
-      content += "\n- " + childContent;
-      
-      // Recursively get nested children
-      const nestedContent = getNestedChildrenContent(childUid, 2);
-      if (nestedContent) {
-        content += nestedContent;
+
+  // If no children, just return the parent content
+  if (!topLevelChildren || topLevelChildren.length === 0) {
+    return blockContent || "";
+  }
+
+  // Sort top-level children by order
+  const sortedTopChildren = topLevelChildren.sort(
+    (a, b) => a[0].order - b[0].order
+  );
+
+  // Check if the requested card index exists
+  if (cardIndex >= sortedTopChildren.length) {
+    // If asking for a non-existent card, return empty
+    return "";
+  }
+
+  // Get the card we want to process
+  const currentCard = sortedTopChildren[cardIndex];
+  const cardUid = currentCard[0].uid;
+  const cardContent = currentCard[0].string;
+
+  // Start building card content
+  let singleCardContent = blockContent ? blockContent + "\n" : "";
+  singleCardContent += "- " + cardContent;
+
+  // Get all second-level blocks for this card
+  const secondLevelBlocks = window.roamAlphaAPI.q(`
+    [:find (pull ?block [:block/string :block/uid :block/order])
+     :where 
+     [?parent :block/uid "${cardUid}"]
+     [?parent :block/children ?block]]
+  `);
+
+  if (secondLevelBlocks && secondLevelBlocks.length > 0) {
+    // Sort second-level blocks
+    const sortedSecondLevel = secondLevelBlocks.sort(
+      (a, b) => a[0].order - b[0].order
+    );
+
+    // Process each second-level block
+    sortedSecondLevel.forEach((block) => {
+      const blockUid = block[0].uid;
+      const blockString = block[0].string;
+
+      // Add the second-level block content
+      singleCardContent += "\n  - " + blockString;
+
+      // If this is an "Examples" block, we need to include its children as well
+      if (blockString.includes("Examples")) {
+        const examplesContent = getNestedChildrenContent(blockUid, 3);
+        if (examplesContent) {
+          singleCardContent += examplesContent;
+        }
+      }
+      // For any other type of block that might have children
+      else {
+        const nestedContent = getNestedChildrenContent(blockUid, 3);
+        if (nestedContent) {
+          singleCardContent += nestedContent;
+        }
       }
     });
   }
-  
-  return content;
+
+  return singleCardContent;
 }
 
 function getNestedChildrenContent(parentUid, depth) {
@@ -110,19 +149,19 @@ function getNestedChildrenContent(parentUid, depth) {
      [?parent :block/uid "${parentUid}"]
      [?parent :block/children ?block]]
   `);
-  
+
   if (children && children.length > 0) {
     // Sort children by order
     const sortedChildren = children.sort((a, b) => a[0].order - b[0].order);
-    
+
     // Add children content with indentation
-    sortedChildren.forEach(child => {
+    sortedChildren.forEach((child) => {
       const childUid = child[0].uid;
       const childContent = child[0].string;
-      
+
       // Include all nested content for proper parsing
       content += "\n" + "  ".repeat(depth) + "- " + childContent;
-      
+
       // Recursively get nested children with increased depth
       const nestedContent = getNestedChildrenContent(childUid, depth + 1);
       if (nestedContent) {
@@ -130,7 +169,7 @@ function getNestedChildrenContent(parentUid, depth) {
       }
     });
   }
-  
+
   return content;
 }
 
@@ -155,10 +194,10 @@ function getNestedChildrenContent(parentUid, depth) {
 /**
  * Waits for a specific delay using Promise
  * @param {number} ms - Milliseconds to wait
- * @returns {Promise} 
+ * @returns {Promise}
  */
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -172,12 +211,14 @@ export async function findBlockElement(uid, maxAttempts = 5, baseDelay = 100) {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const element = document.querySelector(`[id*="${uid}"]`);
     if (element) return element;
-    
+
     // Wait with exponential backoff
     await delay(baseDelay * Math.pow(2, attempt));
   }
-  
-  console.error(`Could not find DOM element for block with UID ${uid} after ${maxAttempts} attempts`);
+
+  console.error(
+    `Could not find DOM element for block with UID ${uid} after ${maxAttempts} attempts`
+  );
   return null;
 }
 
@@ -191,23 +232,26 @@ export function forceExpandBlockInUI(uid) {
       // Find the block element
       const blockElement = await findBlockElement(uid);
       if (!blockElement) return;
-      
+
       // Find the closest parent with the rm-block class
-      const blockContainer = blockElement.closest('.rm-block');
+      const blockContainer = blockElement.closest(".rm-block");
       if (!blockContainer) {
         console.log(`Block container for ${uid} not found`);
         return;
       }
-      
+
       // Check if the block is already expanded by looking for visible children
-      const childrenContainer = blockContainer.querySelector('.rm-block__children');
-      const isCollapsed = childrenContainer && 
-                         (childrenContainer.style.display === 'none' || 
-                          !childrenContainer.querySelector('.rm-block'));
-      
+      const childrenContainer = blockContainer.querySelector(
+        ".rm-block__children"
+      );
+      const isCollapsed =
+        childrenContainer &&
+        (childrenContainer.style.display === "none" ||
+          !childrenContainer.querySelector(".rm-block"));
+
       if (isCollapsed) {
         // Find the expand/collapse button
-        const expandButton = blockContainer.querySelector('.rm-caret');
+        const expandButton = blockContainer.querySelector(".rm-caret");
         if (expandButton) {
           // Simulate a click to expand
           expandButton.click();
@@ -231,11 +275,11 @@ export function forceExpandBlockInUI(uid) {
  */
 export function ensureBlockIsVisible(uid, attemptLimit = 3) {
   let attempts = 0;
-  
+
   const tryMakeVisible = async () => {
     if (attempts >= attemptLimit) return;
     attempts++;
-    
+
     try {
       // Get the parent blocks
       const parentResult = window.roamAlphaAPI.q(`
@@ -244,7 +288,7 @@ export function ensureBlockIsVisible(uid, attemptLimit = 3) {
          [?block :block/uid "${uid}"]
          [?block :block/parents ?parent]]
       `);
-      
+
       if (parentResult && parentResult.length > 0) {
         // For each parent, ensure it's open
         for (const parent of parentResult) {
@@ -254,31 +298,30 @@ export function ensureBlockIsVisible(uid, attemptLimit = 3) {
             window.roamAlphaAPI.updateBlock({
               block: { uid: parentUid, open: true },
             });
-            
+
             // Then use UI interactions as a backup
             forceExpandBlockInUI(parentUid);
-            
+
             // Recursively ensure parent's parents are also open
             ensureBlockIsVisible(parentUid, 1);
-            
+
             // Give the UI time to update
             await delay(50);
           }
         }
       }
-      
+
       // Ensure the target block itself is open
       window.roamAlphaAPI.updateBlock({
         block: { uid: uid, open: true },
       });
-      
     } catch (e) {
       console.log(`Error making block ${uid} visible:`, e);
       // Try again after a delay
       setTimeout(tryMakeVisible, 100 * Math.pow(2, attempts));
     }
   };
-  
+
   // Start the process
   tryMakeVisible();
 }
@@ -299,39 +342,39 @@ export function createChildBlock(
 ) {
   // Generate a new UID for the block
   const uid = window.roamAlphaAPI.util.generateUID();
-  
+
   // First ensure the parent block is open using the API
   window.roamAlphaAPI.updateBlock({
     block: { uid: parentUid, open: true },
   });
-  
+
   // Try to force-expand the parent block in the UI as well
   forceExpandBlockInUI(parentUid);
-  
+
   // Create the new block with trimmed content
   window.roamAlphaAPI.createBlock({
     location: { "parent-uid": parentUid, order: order },
     block: { string: content.trim(), uid: uid, open: open },
   });
-  
+
   // After creating, ensure the block and its parents are properly visible
   setTimeout(async () => {
     try {
       // Use our specialized function to ensure blocks are visible
       ensureBlockIsVisible(uid);
-      
+
       // If the block should be open, also try to expand it directly
       if (open) {
         forceExpandBlockInUI(uid);
       }
-      
+
       // Try to verify the block exists in the DOM
       const blockElement = await findBlockElement(uid, 5, 50);
       if (blockElement) {
         console.log(`Block ${uid} successfully rendered in DOM`);
       } else {
         console.log(`Block ${uid} created but not yet visible in DOM`);
-        
+
         // One more attempt to ensure the parent is open
         ensureBlockIsVisible(parentUid);
       }
@@ -339,7 +382,7 @@ export function createChildBlock(
       console.log("Error ensuring blocks are open:", e);
     }
   }, 150);
-  
+
   return uid;
 }
 

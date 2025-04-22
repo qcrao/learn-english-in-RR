@@ -58,9 +58,15 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
   // Add the send to Anki function
   const sendToAnki = async (uid) => {
     try {
-      const blockContent = getBlockAndChildrenContentByUid(uid);
+      // First, get the total number of top-level children (words)
+      const topLevelChildren = window.roamAlphaAPI.q(`
+        [:find (pull ?block [:block/uid])
+         :where 
+         [?parent :block/uid "${uid}"]
+         [?parent :block/children ?block]]
+      `);
 
-      if (!blockContent) {
+      if (!topLevelChildren || topLevelChildren.length === 0) {
         AppToaster.show({
           message: "No content found in the selected block.",
           intent: "warning",
@@ -69,21 +75,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         return;
       }
 
-      // Check if the block contains highlighted words
-      const hasHighlightedWords =
-        blockContent.includes("^^") || blockContent.includes("🔊");
-
-      if (!hasHighlightedWords) {
-        AppToaster.show({
-          message:
-            "No highlighted words found in the selected block. Please highlight words with ^^ or 🔊.",
-          intent: "warning",
-          timeout: 3000,
-        });
-        return;
-      }
-
-      // Check if Anki Connect is available
+      // Check if Anki Connect is available first
       try {
         await axios.post("http://localhost:8765", {
           action: "version",
@@ -99,9 +91,43 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         return;
       }
 
-      const success = await createAnkiCardFromBlock(blockContent);
+      let successfulCards = 0;
 
-      // The success message is now handled in the createAnkiCardFromBlock function
+      // Process each top-level child (word) one by one
+      for (let i = 0; i < topLevelChildren.length; i++) {
+        // Get the content for the current word/phrase
+        const blockContent = getBlockAndChildrenContentByUid(uid, i);
+
+        // Skip if no content
+        if (!blockContent) continue;
+
+        // Check if the block contains highlighted words
+        const hasHighlightedWords =
+          blockContent.includes("^^") || blockContent.includes("🔊");
+
+        if (!hasHighlightedWords) continue;
+
+        // Create the Anki card for this word
+        const success = await createAnkiCardFromBlock(blockContent);
+        if (success) successfulCards++;
+      }
+
+      // Show a summary message
+      if (successfulCards > 0) {
+        AppToaster.show({
+          message: `Successfully created ${successfulCards} Anki card${
+            successfulCards > 1 ? "s" : ""
+          }.`,
+          intent: "success",
+          timeout: 3000,
+        });
+      } else {
+        AppToaster.show({
+          message: "No Anki cards were created. Check your word entries.",
+          intent: "warning",
+          timeout: 3000,
+        });
+      }
     } catch (error) {
       console.error("Error sending to Anki:", error);
       AppToaster.show({
