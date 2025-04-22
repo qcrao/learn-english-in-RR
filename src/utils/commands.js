@@ -42,7 +42,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
 
     console.log("uid: ", uid);
     // Explicitly set open=true to ensure the block is expanded
-    const targetUid = createChildBlock(uid, "...", "last", true);
+    const targetUid = createChildBlock(uid, "", "last", true);
 
     console.log("createChildBlock targetUid: ", targetUid);
 
@@ -58,12 +58,6 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
   // Add the send to Anki function
   const sendToAnki = async (uid) => {
     try {
-      AppToaster.show({
-        message: "Sending to Anki...",
-        intent: "primary",
-        timeout: 2000,
-      });
-
       const blockContent = getBlockAndChildrenContentByUid(uid);
 
       if (!blockContent) {
