@@ -9,6 +9,16 @@ import {
   ANKI_CONTEXT_MENU_COMMAND_LABEL,
 } from "./utils/commands";
 
+// Define event handlers at module scope so they can be referenced both when adding and removing
+const handleHighlightEnter = (event) => {
+  const text = event.target.textContent;
+  speakText(text);
+};
+
+const handleHighlightLeave = () => {
+  speechSynthesis.cancel();
+};
+
 function addSpeechIconToHighlights() {
   const highlights = document.querySelectorAll(".rm-highlight");
 
@@ -25,19 +35,16 @@ function addSpeechIconToHighlights() {
     const iconContainer = document.createElement("span");
     iconContainer.className = "speech-icon-container";
 
-    // Use the imported speakText function
-    const handleSpeak = () => speakText(text);
-
     // 为高亮文本添加鼠标悬停事件
-    highlight.addEventListener("mouseenter", handleSpeak);
-    highlight.addEventListener("mouseleave", () => speechSynthesis.cancel());
+    highlight.addEventListener("mouseenter", handleHighlightEnter);
+    highlight.addEventListener("mouseleave", handleHighlightLeave);
 
     // 使用函数组件和 React.createElement 替代 ReactDOM.render
     const SpeechIconComponent = () => {
       return React.createElement(SpeechIcon, {
-        onClick: handleSpeak,
-        onMouseEnter: handleSpeak,
-        onMouseLeave: () => speechSynthesis.cancel(),
+        onClick: () => speakText(text),
+        onMouseEnter: () => speakText(text),
+        onMouseLeave: handleHighlightLeave,
       });
     };
 
@@ -108,10 +115,8 @@ function onunload() {
   if (highlights?.length) {
     highlights.forEach((highlight) => {
       if (highlight) {
-        highlight.removeEventListener("mouseenter", handleSpeak);
-        highlight.removeEventListener("mouseleave", () =>
-          speechSynthesis.cancel()
-        );
+        highlight.removeEventListener("mouseenter", handleHighlightEnter);
+        highlight.removeEventListener("mouseleave", handleHighlightLeave);
       }
     });
   }
