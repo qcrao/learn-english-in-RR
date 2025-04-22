@@ -57,10 +57,36 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
 
   // Add the send to Anki function
   const sendToAnki = async (uid) => {
+    // Create a processing lock to prevent multiple executions
+    if (window._ankiProcessingLock) {
+      console.log("Anki processing already in progress, please wait...");
+      AppToaster.show({
+        message: "Anki processing already in progress, please wait...",
+        intent: "warning",
+        timeout: 2000,
+      });
+      return;
+    }
+
     try {
+      // Set processing lock
+      window._ankiProcessingLock = true;
+
+      // Reset the card creation cache if this is a new block
+      if (
+        !window._lastProcessedBlockUid ||
+        window._lastProcessedBlockUid !== uid
+      ) {
+        console.log("New block detected, resetting card cache");
+        window._createdAnkiCards = new Set();
+        window._lastProcessedBlockUid = uid;
+      }
+
+      console.log(`Processing block ${uid} for Anki cards`);
+
       // First, get the total number of top-level children (words)
       const topLevelChildren = window.roamAlphaAPI.q(`
-        [:find (pull ?block [:block/uid])
+        [:find (pull ?block [:block/string :block/uid])
          :where 
          [?parent :block/uid "${uid}"]
          [?parent :block/children ?block]]
@@ -92,38 +118,129 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
       }
 
       let successfulCards = 0;
+      let failedCards = 0;
+      let skippedCards = 0;
+      const totalCards = topLevelChildren.length;
+
+      console.log(`Processing ${totalCards} cards from block ${uid}`);
 
       // Process each top-level child (word) one by one
-      for (let i = 0; i < topLevelChildren.length; i++) {
-        // Get the content for the current word/phrase
-        const blockContent = getBlockAndChildrenContentByUid(uid, i);
+      for (let i = 0; i < totalCards; i++) {
+        try {
+          // Get the word content from the current child's text
+          const wordText = topLevelChildren[i][0].string || "Unknown word";
+          const wordPreview =
+            wordText.length > 30 ? wordText.substring(0, 30) + "..." : wordText;
 
-        // Skip if no content
-        if (!blockContent) continue;
+          // Create a card ID for tracking
+          const wordId = wordText
+            .trim()
+            .replace(/\^\^|\s+/g, "_")
+            .substring(0, 30);
+          const cardTime = Date.now(); // Add timestamp to ensure uniqueness
+          const cardId = `${uid}_${i}_${wordId}_${cardTime}`;
 
-        // Check if the block contains highlighted words
-        const hasHighlightedWords =
-          blockContent.includes("^^") || blockContent.includes("🔊");
+          // Extract word to better identify the card
+          let wordToTrack = "unknown";
+          const highlightMatch = wordText.match(/\^\^([^^]+?)\^\^/);
+          if (highlightMatch) {
+            wordToTrack = highlightMatch[1].trim();
+          } else {
+            const firstWord = wordText.trim().split(/\s+/)[0];
+            if (firstWord) {
+              wordToTrack = firstWord;
+            }
+          }
 
-        if (!hasHighlightedWords) continue;
+          // Simplified ID for tracking (without timestamp)
+          const trackingId = `${uid}_${i}_${wordToTrack}`;
+          console.log(`Tracking ID for this card: ${trackingId}`);
 
-        // Create the Anki card for this word
-        const success = await createAnkiCardFromBlock(blockContent);
-        if (success) successfulCards++;
+          // Skip if we've already processed this card in this session
+          let alreadyProcessed = false;
+
+          if (window._createdAnkiCards) {
+            // Check existing cards with the same tracking ID
+            for (const existingId of window._createdAnkiCards) {
+              if (existingId.includes(trackingId)) {
+                alreadyProcessed = true;
+                console.log(`Matched existing card with ID: ${existingId}`);
+                break;
+              }
+            }
+          }
+
+          if (alreadyProcessed) {
+            console.log(
+              `Card ${i + 1}/${totalCards} already processed: ${wordPreview}`
+            );
+            skippedCards++;
+            continue;
+          }
+
+          console.log(`Processing card ${i + 1}/${totalCards}: ${wordPreview}`);
+
+          // Get the content for the current word/phrase
+          const blockContent = getBlockAndChildrenContentByUid(uid, i);
+
+          // Skip if no content
+          if (!blockContent) {
+            console.log(`Skipping card ${i + 1}: No content`);
+            failedCards++;
+            continue;
+          }
+
+          // Check if the block contains highlighted words
+          const hasHighlightedWords =
+            blockContent.includes("^^") || blockContent.includes("🔊");
+
+          if (!hasHighlightedWords) {
+            console.log(`Skipping card ${i + 1}: No highlighted words`);
+            failedCards++;
+            continue;
+          }
+
+          // Create the Anki card for this word
+          const success = await createAnkiCardFromBlock(blockContent);
+
+          if (success) {
+            console.log(`Card ${i + 1} created successfully`);
+            // Track successful cards by ID - store the tracking ID instead of the full ID
+            if (!window._createdAnkiCards) window._createdAnkiCards = new Set();
+            window._createdAnkiCards.add(trackingId);
+            successfulCards++;
+          } else {
+            console.log(`Card ${i + 1} creation failed`);
+            failedCards++;
+          }
+        } catch (cardError) {
+          console.error(`Error processing card ${i + 1}:`, cardError);
+          failedCards++;
+        }
       }
 
       // Show a summary message
       if (successfulCards > 0) {
+        let message = `Created ${successfulCards} of ${totalCards} Anki cards.`;
+        if (failedCards > 0) message += ` ${failedCards} failed.`;
+        if (skippedCards > 0)
+          message += ` ${skippedCards} skipped (already processed).`;
+
         AppToaster.show({
-          message: `Successfully created ${successfulCards} Anki card${
-            successfulCards > 1 ? "s" : ""
-          }.`,
+          message: message,
           intent: "success",
+          timeout: 3000,
+        });
+      } else if (skippedCards > 0) {
+        AppToaster.show({
+          message: `No new cards created. ${skippedCards} cards were already processed.`,
+          intent: "warning",
           timeout: 3000,
         });
       } else {
         AppToaster.show({
-          message: "No Anki cards were created. Check your word entries.",
+          message:
+            "No Anki cards were created. Check format of your word entries.",
           intent: "warning",
           timeout: 3000,
         });
@@ -135,6 +252,9 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
         intent: "danger",
         timeout: 5000,
       });
+    } finally {
+      // Always release the lock
+      window._ankiProcessingLock = false;
     }
   };
 

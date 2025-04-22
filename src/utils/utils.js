@@ -64,6 +64,8 @@ export function getBlockContentByUid(uid) {
 }
 
 export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
+  console.log(`Getting content for card index ${cardIndex} from block ${uid}`);
+
   const blockContent = getBlockContentByUid(uid);
 
   // Get all top-level child blocks (each representing a word/phrase)
@@ -76,6 +78,7 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
 
   // If no children, just return the parent content
   if (!topLevelChildren || topLevelChildren.length === 0) {
+    console.log("No children found in block");
     return blockContent || "";
   }
 
@@ -83,9 +86,15 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
   const sortedTopChildren = topLevelChildren.sort(
     (a, b) => a[0].order - b[0].order
   );
+  console.log(`Found ${sortedTopChildren.length} top-level children`);
 
   // Check if the requested card index exists
   if (cardIndex >= sortedTopChildren.length) {
+    console.log(
+      `Card index ${cardIndex} out of range (max: ${
+        sortedTopChildren.length - 1
+      })`
+    );
     // If asking for a non-existent card, return empty
     return "";
   }
@@ -94,10 +103,54 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
   const currentCard = sortedTopChildren[cardIndex];
   const cardUid = currentCard[0].uid;
   const cardContent = currentCard[0].string;
+  console.log(
+    `Processing card ${cardIndex}: ${cardContent.substring(0, 30)}...`
+  );
 
-  // Start building card content
-  let singleCardContent = blockContent ? blockContent + "\n" : "";
-  singleCardContent += "- " + cardContent;
+  // For Anki cards, we need to include the highlighted word in the context
+  // Check if the word is already highlighted in the parent content
+  let contextWithHighlight = blockContent || "";
+
+  // Extract the word from the card content, handling highlighted words properly
+  let wordToHighlight = "";
+  const highlightMatch = cardContent.match(/\^\^([^^]+?)\^\^/);
+
+  if (highlightMatch) {
+    // If the word is already highlighted, use that
+    wordToHighlight = highlightMatch[1].trim();
+    console.log(`Found highlighted word in card content: ${wordToHighlight}`);
+  } else {
+    // Otherwise use the first word as a fallback
+    wordToHighlight = cardContent.trim().split(/\s+/)[0];
+    console.log(`Using first word as fallback: ${wordToHighlight}`);
+  }
+
+  // Create a unique identifier for this card to avoid duplicates
+  // Use a simpler format without underscores in the word for better readability in logs
+  const cardId = `${uid}_${cardIndex}_${wordToHighlight}`;
+  console.log(`Card ID: ${cardId}`);
+
+  // If the word is not already highlighted in the context, add the highlight
+  if (
+    wordToHighlight &&
+    !contextWithHighlight.includes(`^^${wordToHighlight}^^`) &&
+    !contextWithHighlight.includes(`${wordToHighlight} 🔊`)
+  ) {
+    // Try to find and highlight the word in the context
+    if (contextWithHighlight.includes(wordToHighlight)) {
+      contextWithHighlight = contextWithHighlight.replace(
+        new RegExp(`\\b${wordToHighlight}\\b`, "g"),
+        `^^${wordToHighlight}^^`
+      );
+      console.log(`Highlighted word '${wordToHighlight}' in context`);
+    }
+  }
+
+  // Start building card content with the context
+  let singleCardContent = contextWithHighlight;
+
+  // Add the word entry line
+  singleCardContent += "\n- " + cardContent;
 
   // Get all second-level blocks for this card
   const secondLevelBlocks = window.roamAlphaAPI.q(`
@@ -108,6 +161,10 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
   `);
 
   if (secondLevelBlocks && secondLevelBlocks.length > 0) {
+    console.log(
+      `Found ${secondLevelBlocks.length} second-level blocks for the card`
+    );
+
     // Sort second-level blocks
     const sortedSecondLevel = secondLevelBlocks.sort(
       (a, b) => a[0].order - b[0].order
@@ -128,8 +185,13 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
           singleCardContent += examplesContent;
         }
       }
-      // For any other type of block that might have children
-      else {
+      // For other blocks that might have children, like Synonyms or Antonyms
+      else if (
+        blockString.includes("Synonyms") ||
+        blockString.includes("Antonyms") ||
+        blockString.includes("Etymology") ||
+        blockString.includes("Usage Notes")
+      ) {
         const nestedContent = getNestedChildrenContent(blockUid, 3);
         if (nestedContent) {
           singleCardContent += nestedContent;
@@ -138,6 +200,7 @@ export function getBlockAndChildrenContentByUid(uid, cardIndex = 0) {
     });
   }
 
+  console.log(`Finished compiling content for card ${cardIndex}`);
   return singleCardContent;
 }
 
