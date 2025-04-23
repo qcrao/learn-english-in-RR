@@ -829,7 +829,16 @@ function createCardContent(contextSentence, word, wordEntry) {
     wordEntry.content.examples.length > 0
       ? `<p><b>Examples:</b></p>
     <ul>${wordEntry.content.examples
-      .map((ex) => `<li>${ex}</li>`)
+      .map((ex) => {
+        // Highlight the main word/phrase in the examples
+        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`\\b${escapedWord}\\b`, "gi");
+        return `<li>${ex.replace(
+          regex,
+          (match) =>
+            `<mark style="background-color: #f2c744; color: black;">${match}</mark>`
+        )}</li>`;
+      })
       .join("")}</ul>`
       : ""
   }
