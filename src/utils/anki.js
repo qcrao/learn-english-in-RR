@@ -111,13 +111,6 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
 
     // Show results notification
     if (createdCards > 0) {
-      AppToaster.show({
-        message: `Added ${createdCards} card${
-          createdCards > 1 ? "s" : ""
-        } to Anki deck "${deckName}"`,
-        intent: "success",
-        timeout: 3000,
-      });
       return true;
     } else {
       AppToaster.show({
