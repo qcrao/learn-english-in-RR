@@ -8,7 +8,7 @@ export let defaultOpenAIModel;
 
 export let streamResponse = true;
 export let motherLanguage = "zh";
-export let ankiDeckName = "English Vocabulary";
+export let ankiDeckName;
 
 export function loadInitialSettings(extensionAPI) {
   OPENAI_API_KEY = extensionAPI.settings.get("openai-api-key");
@@ -75,9 +75,9 @@ export function initPanelConfig(extensionAPI) {
         description: "Name of the Anki deck to add cards to",
         action: {
           type: "input",
-          placeholder: "English Vocabulary",
+          placeholder: "English Vocabulary in RR  ",
           onChange: (evt) => {
-            ankiDeckName = evt.target.value || "English Vocabulary";
+            ankiDeckName = evt.target.value || "English Vocabulary in RR";
             extensionAPI.settings.set("anki-deck-name", ankiDeckName);
           },
         },
