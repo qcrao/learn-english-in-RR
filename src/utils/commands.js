@@ -6,6 +6,7 @@ import {
   createChildBlock,
   getFocusAndSelection,
   getBlockAndChildrenContentByUid,
+  forceExpandBlockInUI,
 } from "./utils";
 import { createAnkiCardFromBlock } from "./anki";
 import axios from "axios";
@@ -43,6 +44,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
     console.log("uid: ", uid);
     // Explicitly set open=true to ensure the block is expanded
     const targetUid = createChildBlock(uid, "", "last", true);
+    forceExpandBlockInUI(uid);
 
     console.log("createChildBlock targetUid: ", targetUid);
 

@@ -401,18 +401,18 @@ export function createChildBlock(
   parentUid,
   content,
   order = "last",
-  open = true
+  open = false
 ) {
   // Generate a new UID for the block
   const uid = window.roamAlphaAPI.util.generateUID();
 
   // First ensure the parent block is open using the API
   window.roamAlphaAPI.updateBlock({
-    block: { uid: parentUid, open: true },
+    block: { uid: parentUid, open: open },
   });
 
   // Try to force-expand the parent block in the UI as well
-  forceExpandBlockInUI(parentUid);
+  // forceExpandBlockInUI(parentUid);
 
   // Create the new block with trimmed content
   window.roamAlphaAPI.createBlock({
@@ -421,30 +421,30 @@ export function createChildBlock(
   });
 
   // After creating, ensure the block and its parents are properly visible
-  setTimeout(async () => {
-    try {
-      // Use our specialized function to ensure blocks are visible
-      ensureBlockIsVisible(uid);
+  // setTimeout(async () => {
+  //   try {
+  //     // Use our specialized function to ensure blocks are visible
+  //     ensureBlockIsVisible(uid);
 
-      // If the block should be open, also try to expand it directly
-      if (open) {
-        forceExpandBlockInUI(uid);
-      }
+  //     // If the block should be open, also try to expand it directly
+  //     if (open) {
+  //       forceExpandBlockInUI(uid);
+  //     }
 
-      // Try to verify the block exists in the DOM
-      const blockElement = await findBlockElement(uid, 5, 50);
-      if (blockElement) {
-        console.log(`Block ${uid} successfully rendered in DOM`);
-      } else {
-        console.log(`Block ${uid} created but not yet visible in DOM`);
+  //     // Try to verify the block exists in the DOM
+  //     const blockElement = await findBlockElement(uid, 5, 50);
+  //     if (blockElement) {
+  //       console.log(`Block ${uid} successfully rendered in DOM`);
+  //     } else {
+  //       console.log(`Block ${uid} created but not yet visible in DOM`);
 
-        // One more attempt to ensure the parent is open
-        ensureBlockIsVisible(parentUid);
-      }
-    } catch (e) {
-      console.log("Error ensuring blocks are open:", e);
-    }
-  }, 150);
+  //       // One more attempt to ensure the parent is open
+  //       ensureBlockIsVisible(parentUid);
+  //     }
+  //   } catch (e) {
+  //     console.log("Error ensuring blocks are open:", e);
+  //   }
+  // }, 150);
 
   return uid;
 }
@@ -495,7 +495,7 @@ export function processContent(parentUid, content) {
     )} ${ensureBackticks(basic.partOfSpeech)} ${ensureBackticks(
       basic.motherLanguageTranslation
     )} ${word.tags.map((tag) => `#${tag}`).join(" ")}`;
-    const topLevelUid = createChildBlock(parentUid, basicInfo);
+    const topLevelUid = createChildBlock(parentUid, basicInfo, "last", true);
 
     // Create a child block for the definition
     createChildBlock(topLevelUid, `**Definition**: ${word.definition}`);
