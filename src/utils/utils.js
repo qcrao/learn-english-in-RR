@@ -332,64 +332,6 @@ export function forceExpandBlockInUI(uid) {
 }
 
 /**
- * Ensure a block and all its parent blocks are visible/expanded in the UI
- * @param {string} uid - The block UID to make visible
- * @param {number} attemptLimit - Maximum recursive attempts
- */
-export function ensureBlockIsVisible(uid, attemptLimit = 3) {
-  let attempts = 0;
-
-  const tryMakeVisible = async () => {
-    if (attempts >= attemptLimit) return;
-    attempts++;
-
-    try {
-      // Get the parent blocks
-      const parentResult = window.roamAlphaAPI.q(`
-        [:find (pull ?parent [:block/uid])
-         :where
-         [?block :block/uid "${uid}"]
-         [?block :block/parents ?parent]]
-      `);
-
-      if (parentResult && parentResult.length > 0) {
-        // For each parent, ensure it's open
-        for (const parent of parentResult) {
-          const parentUid = parent[0].uid;
-          if (parentUid) {
-            // First use the API to open the block
-            window.roamAlphaAPI.updateBlock({
-              block: { uid: parentUid, open: true },
-            });
-
-            // Then use UI interactions as a backup
-            forceExpandBlockInUI(parentUid);
-
-            // Recursively ensure parent's parents are also open
-            ensureBlockIsVisible(parentUid, 1);
-
-            // Give the UI time to update
-            await delay(50);
-          }
-        }
-      }
-
-      // Ensure the target block itself is open
-      window.roamAlphaAPI.updateBlock({
-        block: { uid: uid, open: true },
-      });
-    } catch (e) {
-      console.log(`Error making block ${uid} visible:`, e);
-      // Try again after a delay
-      setTimeout(tryMakeVisible, 100 * Math.pow(2, attempts));
-    }
-  };
-
-  // Start the process
-  tryMakeVisible();
-}
-
-/**
  * Create a child block under a parent block in Roam
  * @param {string} parentUid - The parent block's UID
  * @param {string} content - Content for the new block
@@ -411,40 +353,11 @@ export function createChildBlock(
     block: { uid: parentUid, open: open },
   });
 
-  // Try to force-expand the parent block in the UI as well
-  // forceExpandBlockInUI(parentUid);
-
   // Create the new block with trimmed content
   window.roamAlphaAPI.createBlock({
     location: { "parent-uid": parentUid, order: order },
     block: { string: content.trim(), uid: uid, open: open },
   });
-
-  // After creating, ensure the block and its parents are properly visible
-  // setTimeout(async () => {
-  //   try {
-  //     // Use our specialized function to ensure blocks are visible
-  //     ensureBlockIsVisible(uid);
-
-  //     // If the block should be open, also try to expand it directly
-  //     if (open) {
-  //       forceExpandBlockInUI(uid);
-  //     }
-
-  //     // Try to verify the block exists in the DOM
-  //     const blockElement = await findBlockElement(uid, 5, 50);
-  //     if (blockElement) {
-  //       console.log(`Block ${uid} successfully rendered in DOM`);
-  //     } else {
-  //       console.log(`Block ${uid} created but not yet visible in DOM`);
-
-  //       // One more attempt to ensure the parent is open
-  //       ensureBlockIsVisible(parentUid);
-  //     }
-  //   } catch (e) {
-  //     console.log("Error ensuring blocks are open:", e);
-  //   }
-  // }, 150);
 
   return uid;
 }
