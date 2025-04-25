@@ -136,7 +136,7 @@ export const insertCompletion = async (
     AppToaster.show({
       message:
         "Incorrect mother language code, see instructions in settings panel.",
-      intent: "danger",
+      intent: "warning",
       timeout: 3000,
     });
     // remove targetUid
@@ -323,7 +323,7 @@ async function aiCompletion(prompt, content, responseFormat, targetUid) {
       } else {
         AppToaster.show({
           message: `Provide an OpenAI API key to use ${defaultOpenAIModel} model. See doc and settings.`,
-          intent: "danger",
+          intent: "warning",
           timeout: 15000,
         });
       }
@@ -335,7 +335,7 @@ async function aiCompletion(prompt, content, responseFormat, targetUid) {
       } else {
         AppToaster.show({
           message: `Provide a xAI API key to use ${defaultGrokModel} model. See settings.`,
-          intent: "danger",
+          intent: "warning",
           timeout: 15000,
         });
       }
@@ -344,7 +344,7 @@ async function aiCompletion(prompt, content, responseFormat, targetUid) {
     default:
       AppToaster.show({
         message: `Unknown AI provider: ${selectedAIProvider}. Please select a valid provider in settings.`,
-        intent: "danger",
+        intent: "warning",
         timeout: 15000,
       });
   }
@@ -417,6 +417,7 @@ export function initializeGrokAPI(API_KEY) {
     console.log(error.message);
     AppToaster.show({
       message: `Learn English in RR - Error with xAI API key: ${error.message}`,
+      intent: "warning",
     });
     return null;
   }
@@ -546,6 +547,7 @@ export async function openaiCompletion(
     AppToaster.show({
       message: `OpenAI error msg: ${error.message}`,
       timeout: 15000,
+      intent: "danger",
     });
     return respStr;
   }
@@ -630,6 +632,7 @@ export async function grokCompletion(prompt, content, targetUid) {
     AppToaster.show({
       message: `xAI error: ${error.message}`,
       timeout: 15000,
+      intent: "danger",
     });
     return respStr;
   }
