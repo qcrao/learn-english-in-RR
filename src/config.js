@@ -114,18 +114,14 @@ export function initPanelConfig(extensionAPI) {
         description: "Choose the AI service provider",
         action: {
           type: "select",
-          items: ["OpenAI", "Grok AI"],
+          items: ["OpenAI", "xAI"],
           initialValueFn: () => {
             // Convert internal ID to display name
-            if (selectedAIProvider === "grok") return "Grok AI";
+            if (selectedAIProvider === "xAI") return "xAI";
             return "OpenAI";
           },
           onChange: (value) => {
             // Map display names to internal identifiers
-            const providerMap = {
-              OpenAI: "openai",
-              "Grok AI": "grok",
-            };
 
             selectedAIProvider = providerMap[value] || "openai";
             extensionAPI.settings.set("ai-provider", selectedAIProvider);
@@ -156,18 +152,16 @@ export function initPanelConfig(extensionAPI) {
       },
       {
         id: "grok-api-key",
-        name: "Grok AI API Key",
+        name: "xAI API Key",
         description: (
           <>
-            <span>
-              Enter your Grok AI API key (using grok-3-mini-beta model)
-            </span>
+            <span>Enter your xAI API key (using grok-3-mini-beta model)</span>
             <br></br>
             <a
               href="https://console.x.ai/team/e0167c17-198b-4ef2-829f-0e49447d094f/api-keys"
               target="_blank"
             >
-              (Get an API key from Grok)
+              (Get an API key from xAI)
             </a>
           </>
         ),

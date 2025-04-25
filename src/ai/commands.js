@@ -124,7 +124,7 @@ export const insertCompletion = async (
 
   // model should be grok-3-mini-beta or gpt-4o-mini
   let model = "gpt-4o-mini";
-  if (selectedAIProvider === "grok") {
+  if (selectedAIProvider === "xAI") {
     model = "grok-3-mini-beta";
   }
 
@@ -329,12 +329,12 @@ async function aiCompletion(prompt, content, responseFormat, targetUid) {
       }
       break;
 
-    case "grok":
+    case "xAI":
       if (GROK_API_KEY && GROK_API_KEY !== "") {
         aiResponse = await grokCompletion(prompt, content, targetUid);
       } else {
         AppToaster.show({
-          message: `Provide a Grok API key to use ${defaultGrokModel} model. See settings.`,
+          message: `Provide a xAI API key to use ${defaultGrokModel} model. See settings.`,
           intent: "danger",
           timeout: 15000,
         });
@@ -416,7 +416,7 @@ export function initializeGrokAPI(API_KEY) {
   } catch (error) {
     console.log(error.message);
     AppToaster.show({
-      message: `Learn English in RR - Error with Grok API key: ${error.message}`,
+      message: `Learn English in RR - Error with xAI API key: ${error.message}`,
     });
     return null;
   }
@@ -554,13 +554,13 @@ export async function openaiCompletion(
 export async function grokCompletion(prompt, content, targetUid) {
   let respStr = "";
 
-  console.log("Using Grok model:", defaultGrokModel);
-  console.log("Grok prompt:", prompt);
-  console.log("Grok content:", content);
+  console.log("Using xAI model:", defaultGrokModel);
+  console.log("xAI prompt:", prompt);
+  console.log("xAI content:", content);
 
   try {
     if (!grokClient) {
-      throw new Error("Grok API client not initialized");
+      throw new Error("xAI API client not initialized");
     }
 
     const messages = [
@@ -600,7 +600,7 @@ export async function grokCompletion(prompt, content, targetUid) {
           }
         }
       } catch (e) {
-        console.error("Error during Grok stream response: ", e);
+        console.error("Error during xAI stream response: ", e);
         return "";
       } finally {
         if (streamElementFound && !isCanceledStreamGlobal) {
@@ -608,7 +608,7 @@ export async function grokCompletion(prompt, content, targetUid) {
         }
 
         if (isCanceledStreamGlobal) {
-          console.log("Grok response stream interrupted.");
+          console.log("xAI response stream interrupted.");
         }
       }
     } else {
@@ -626,9 +626,9 @@ export async function grokCompletion(prompt, content, targetUid) {
     removeSpinner(intervalId);
     return respStr;
   } catch (error) {
-    console.error("Grok error:", error);
+    console.error("xAI error:", error);
     AppToaster.show({
-      message: `Grok error: ${error.message}`,
+      message: `xAI error: ${error.message}`,
       timeout: 15000,
     });
     return respStr;
