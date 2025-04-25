@@ -1,6 +1,15 @@
 import OpenAI from "openai";
 import { AppToaster } from "../components/toaster";
-import { OPENAI_API_KEY, openaiLibrary, streamResponse } from "../config";
+import {
+  OPENAI_API_KEY,
+  openaiClient,
+  streamResponse,
+  GROK_API_KEY,
+  grokClient,
+  selectedAIProvider,
+  defaultOpenAIModel,
+  defaultGrokModel,
+} from "../config";
 import {
   displaySpinner,
   insertParagraphForStream,
@@ -20,6 +29,8 @@ export const tokensLimit = {
   "gpt-3.5-turbo": 16385,
   "o1-preview": 128000,
   "o1-mini": 128000,
+  "grok-1": 128000,
+  "grok-3-beta": 128000,
   custom: undefined,
 };
 
@@ -304,25 +315,47 @@ async function aiCompletion(
   responseFormat,
   targetUid
 ) {
-  let aiResponse;
-  let model = instantModel || defaultModel;
+  let aiResponse = "";
 
-  if (openaiLibrary && openaiLibrary.apiKey && openaiLibrary.apiKey !== "") {
-    aiResponse = await openaiCompletion(
-      openaiLibrary,
-      model,
-      prompt,
-      content,
-      responseFormat,
-      targetUid
-    );
-  } else {
-    AppToaster.show({
-      message: `Provide an API key to use ${model} model. See doc and settings.`,
-      intent: "danger",
-      timeout: 15000,
-    });
-    return "";
+  // Select the appropriate API based on the chosen provider
+  switch (selectedAIProvider) {
+    case "openai":
+      if (openaiClient && openaiClient.apiKey && openaiClient.apiKey !== "") {
+        aiResponse = await openaiCompletion(
+          openaiClient,
+          defaultOpenAIModel,
+          prompt,
+          content,
+          responseFormat,
+          targetUid
+        );
+      } else {
+        AppToaster.show({
+          message: `Provide an OpenAI API key to use ${defaultOpenAIModel} model. See doc and settings.`,
+          intent: "danger",
+          timeout: 15000,
+        });
+      }
+      break;
+
+    case "grok":
+      if (GROK_API_KEY && GROK_API_KEY !== "") {
+        aiResponse = await grokCompletion(prompt, content, targetUid);
+      } else {
+        AppToaster.show({
+          message: `Provide a Grok API key to use ${defaultGrokModel} model. See settings.`,
+          intent: "danger",
+          timeout: 15000,
+        });
+      }
+      break;
+
+    default:
+      AppToaster.show({
+        message: `Unknown AI provider: ${selectedAIProvider}. Please select a valid provider in settings.`,
+        intent: "danger",
+        timeout: 15000,
+      });
   }
 
   return aiResponse;
@@ -372,6 +405,29 @@ export function initializeOpenAIAPI(API_KEY, baseURL) {
     AppToaster.show({
       message: `Learn English in RR - Error during the initialization of OpenAI API: ${error.message}`,
     });
+  }
+}
+
+export function initializeGrokAPI(API_KEY) {
+  try {
+    if (!API_KEY || API_KEY === "") {
+      return null;
+    }
+
+    // Initialize Grok client using OpenAI SDK with Grok baseURL
+    const grokClient = new OpenAI({
+      apiKey: API_KEY,
+      baseURL: "https://api.x.ai/v1",
+      dangerouslyAllowBrowser: true,
+    });
+
+    return grokClient;
+  } catch (error) {
+    console.log(error.message);
+    AppToaster.show({
+      message: `Learn English in RR - Error with Grok API key: ${error.message}`,
+    });
+    return null;
   }
 }
 
@@ -430,31 +486,35 @@ export async function openaiCompletion(
 
     if (streamResponse && responseFormat === "text") {
       console.log("in openaiCompletion streamResponse: ", streamResponse);
-      
+
       // Create a placeholder for the stream content
       let streamElt = insertParagraphForStream(targetUid);
-      
+
       // Set a flag to track if we found a real DOM element to work with
       let streamElementFound = false;
-      
+
       // Retry finding the element up to 5 times with increasing delays
       for (let attempt = 0; attempt < 5; attempt++) {
-        if (streamElt && !streamElt.classList.contains('placeholder')) {
+        if (streamElt && !streamElt.classList.contains("placeholder")) {
           streamElementFound = true;
           break;
         }
-        
+
         // Wait with exponential backoff
         const waitTime = 200 * Math.pow(2, attempt);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+
         // Try to get the element again
-        streamElt = document.querySelector(`[id*="${targetUid}"] .speech-stream`);
+        streamElt = document.querySelector(
+          `[id*="${targetUid}"] .speech-stream`
+        );
       }
-      
+
       // If we couldn't find the element after retries, log the error but continue
       if (!streamElementFound) {
-        console.error(`Could not find stream element for block with UID ${targetUid}`);
+        console.error(
+          `Could not find stream element for block with UID ${targetUid}`
+        );
       }
 
       try {
@@ -466,7 +526,7 @@ export async function openaiCompletion(
             break;
           }
           respStr += chunk.choices[0]?.delta?.content || "";
-          
+
           if (streamElementFound) {
             streamElt.innerHTML += chunk.choices[0]?.delta?.content || "";
           }
@@ -481,7 +541,7 @@ export async function openaiCompletion(
             streamElt.remove();
           }
         }
-        
+
         if (isCanceledStreamGlobal) {
           console.log("GPT response stream interrupted.");
         }
@@ -494,6 +554,90 @@ export async function openaiCompletion(
     console.error(error);
     AppToaster.show({
       message: `OpenAI error msg: ${error.message}`,
+      timeout: 15000,
+    });
+    return respStr;
+  }
+}
+
+export async function grokCompletion(prompt, content, targetUid) {
+  let respStr = "";
+
+  console.log("Using Grok model:", defaultGrokModel);
+  console.log("Grok prompt:", prompt);
+  console.log("Grok content:", content);
+
+  try {
+    if (!grokClient) {
+      throw new Error("Grok API client not initialized");
+    }
+
+    const messages = [
+      { role: "system", content: prompt },
+      { role: "user", content: content },
+    ];
+
+    const intervalId = await displaySpinner(targetUid);
+
+    if (streamResponse) {
+      // Handle streaming response with OpenAI client
+      const streamElt = insertParagraphForStream(targetUid);
+      let streamElementFound =
+        streamElt && !streamElt.classList.contains("placeholder");
+
+      const response = await grokClient.chat.completions.create({
+        model: defaultGrokModel,
+        messages: messages,
+        stream: true,
+        temperature: 0.7,
+      });
+
+      // Process streaming response
+      try {
+        for await (const chunk of response) {
+          if (isCanceledStreamGlobal) {
+            if (streamElementFound) {
+              streamElt.innerHTML += "(⚠️ stream interrupted by user)";
+            }
+            break;
+          }
+          const content = chunk.choices[0]?.delta?.content || "";
+          respStr += content;
+
+          if (streamElementFound) {
+            streamElt.innerHTML += content;
+          }
+        }
+      } catch (e) {
+        console.error("Error during Grok stream response: ", e);
+        return "";
+      } finally {
+        if (streamElementFound && !isCanceledStreamGlobal) {
+          streamElt.remove();
+        }
+
+        if (isCanceledStreamGlobal) {
+          console.log("Grok response stream interrupted.");
+        }
+      }
+    } else {
+      // Non-streaming response
+      const response = await grokClient.chat.completions.create({
+        model: defaultGrokModel,
+        messages: messages,
+        stream: false,
+        temperature: 0.7,
+      });
+
+      respStr = response.choices[0].message.content;
+    }
+
+    removeSpinner(intervalId);
+    return respStr;
+  } catch (error) {
+    console.error("Grok error:", error);
+    AppToaster.show({
+      message: `Grok error: ${error.message}`,
       timeout: 15000,
     });
     return respStr;

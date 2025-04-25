@@ -1,27 +1,42 @@
-import { getValidLanguageCode, initializeOpenAIAPI } from "./ai/commands";
+import {
+  getValidLanguageCode,
+  initializeOpenAIAPI,
+  initializeGrokAPI,
+} from "./ai/commands";
 
 export let selectedVoiceName = "Nicky";
 
-export let openaiLibrary;
+export let openaiClient;
 export let OPENAI_API_KEY = "";
-export let defaultOpenAIModel;
+export let defaultOpenAIModel = "gpt-4o-mini";
 
+export let grokClient;
+export let GROK_API_KEY = "";
+export let defaultGrokModel = "grok-3-beta";
+
+export let selectedAIProvider = "openai";
 export let streamResponse = true;
 export let motherLanguage = "zh";
 export let ankiDeckName;
 
 export function loadInitialSettings(extensionAPI) {
+  // OpenAI settings
   OPENAI_API_KEY = extensionAPI.settings.get("openai-api-key");
-  openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
+  openaiClient = initializeOpenAIAPI(OPENAI_API_KEY);
 
-  defaultOpenAIModel = extensionAPI.settings.get("openai-model");
-  if (!defaultOpenAIModel) defaultOpenAIModel = "GPT-4o-mini";
+  // Grok settings
+  GROK_API_KEY = extensionAPI.settings.get("grok-api-key");
+  grokClient = initializeGrokAPI(GROK_API_KEY);
+
+  // General settings
+  selectedAIProvider = extensionAPI.settings.get("ai-provider");
+  if (!selectedAIProvider) selectedAIProvider = "openai";
 
   streamResponse = extensionAPI.settings.get("streamResponse");
 
   motherLanguage = extensionAPI.settings.get("mother-language-input");
   if (!motherLanguage) motherLanguage = "zh";
-  
+
   const savedAnkiDeck = extensionAPI.settings.get("anki-deck-name");
   if (savedAnkiDeck) ankiDeckName = savedAnkiDeck;
 }
@@ -85,7 +100,7 @@ export function initPanelConfig(extensionAPI) {
       {
         id: "streamResponse",
         name: "Stream response",
-        description: "Stream responses of GPT models",
+        description: "Stream responses of AI models (when supported)",
         action: {
           type: "switch",
           onChange: (evt) => {
@@ -94,34 +109,27 @@ export function initPanelConfig(extensionAPI) {
         },
       },
       {
-        id: "openai-model",
-        name: "OpenAI Model",
-        description: "Choose the OpenAI model",
+        id: "ai-provider",
+        name: "AI Provider",
+        description: "Choose the AI service provider",
         action: {
           type: "select",
-          items: [
-            "gpt-4o-mini",
-            "gpt-4o",
-            "gpt-4-turbo",
-            "gpt-4",
-            "gpt-3.5-turbo",
-            "o1-preview",
-            "o1-mini",
-          ],
+          items: ["OpenAI", "Grok AI"],
           onChange: (value) => {
-            defaultOpenAIModel = value;
+            selectedAIProvider = value.toLowerCase().replace(" ai", "");
+            extensionAPI.settings.set("ai-provider", selectedAIProvider);
           },
         },
       },
       {
         id: "openai-api-key",
-        name: "OpenAI API Key (GPT)",
+        name: "OpenAI API Key",
         description: (
           <>
-            <span>Copy here your OpenAI API key for GPT models</span>
+            <span>Enter your OpenAI API key (using gpt-4o-mini model)</span>
             <br></br>
             <a href="https://platform.openai.com/api-keys" target="_blank">
-              (Follow this link to generate a new one)
+              (Get an API key from OpenAI)
             </a>
           </>
         ),
@@ -130,7 +138,32 @@ export function initPanelConfig(extensionAPI) {
           onChange: (evt) => {
             setTimeout(() => {
               OPENAI_API_KEY = evt.target.value;
-              openaiLibrary = initializeOpenAIAPI(OPENAI_API_KEY);
+              openaiClient = initializeOpenAIAPI(OPENAI_API_KEY);
+            }, 200);
+          },
+        },
+      },
+      {
+        id: "grok-api-key",
+        name: "Grok AI API Key",
+        description: (
+          <>
+            <span>Enter your Grok AI API key (using grok-3-beta model)</span>
+            <br></br>
+            <a
+              href="https://console.x.ai/team/e0167c17-198b-4ef2-829f-0e49447d094f/api-keys"
+              target="_blank"
+            >
+              (Get an API key from Grok)
+            </a>
+          </>
+        ),
+        action: {
+          type: "input",
+          onChange: (evt) => {
+            setTimeout(() => {
+              GROK_API_KEY = evt.target.value;
+              grokClient = initializeGrokAPI(GROK_API_KEY);
             }, 200);
           },
         },
