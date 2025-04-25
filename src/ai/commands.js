@@ -31,6 +31,7 @@ export const tokensLimit = {
   "o1-mini": 128000,
   "grok-1": 128000,
   "grok-3-beta": 128000,
+  "grok-3-mini-beta": 128000,
   custom: undefined,
 };
 
@@ -94,11 +95,7 @@ export const insertCompletion = async (
   prompt,
   targetUid,
   content,
-  instantModel
 ) => {
-  let defaultModel = "gpt-4o-mini";
-  let model = instantModel || defaultModel;
-
   // Get existing parsed words
   const existingWords = getExistingParsedWords(parentUid);
   console.log("existingWords: ", existingWords);
@@ -123,6 +120,12 @@ export const insertCompletion = async (
       },
     });
     return;
+  }
+
+  // model should be grok-3-mini-beta or gpt-4o-mini
+  let model = "gpt-4o-mini";
+  if (selectedAIProvider === "grok") {
+    model = "grok-3-mini-beta";
   }
 
   content = await verifyTokenLimitAndTruncate(model, prompt, updatedContent);
@@ -151,7 +154,6 @@ export const insertCompletion = async (
 
   console.log("targetUid: ", targetUid);
   const aiResponse = await aiCompletion(
-    model,
     prompt,
     content,
     "text",
@@ -309,7 +311,6 @@ export function getValidLanguageCode(input) {
 }
 
 async function aiCompletion(
-  instantModel,
   prompt,
   content,
   responseFormat,

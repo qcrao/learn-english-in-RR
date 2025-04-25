@@ -12,7 +12,7 @@ export let defaultOpenAIModel = "gpt-4o-mini";
 
 export let grokClient;
 export let GROK_API_KEY = "";
-export let defaultGrokModel = "grok-3-beta";
+export let defaultGrokModel = "grok-3-mini-beta";
 
 export let selectedAIProvider = "openai";
 export let streamResponse = true;
@@ -148,7 +148,9 @@ export function initPanelConfig(extensionAPI) {
         name: "Grok AI API Key",
         description: (
           <>
-            <span>Enter your Grok AI API key (using grok-3-beta model)</span>
+            <span>
+              Enter your Grok AI API key (using grok-3-mini-beta model)
+            </span>
             <br></br>
             <a
               href="https://console.x.ai/team/e0167c17-198b-4ef2-829f-0e49447d094f/api-keys"

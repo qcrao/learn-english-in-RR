@@ -53,7 +53,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
       uid,
       systemPrompt,
       targetUid,
-      blockContent
+      blockContent,
     );
   };
 
