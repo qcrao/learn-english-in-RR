@@ -94,7 +94,7 @@ export const insertCompletion = async (
   parentUid,
   prompt,
   targetUid,
-  content,
+  content
 ) => {
   // Get existing parsed words
   const existingWords = getExistingParsedWords(parentUid);
@@ -153,12 +153,7 @@ export const insertCompletion = async (
   console.log("intervalId: ", intervalId);
 
   console.log("targetUid: ", targetUid);
-  const aiResponse = await aiCompletion(
-    prompt,
-    content,
-    "text",
-    targetUid
-  );
+  const aiResponse = await aiCompletion(prompt, content, "text", targetUid);
   removeSpinner(intervalId);
 
   // remove targetUid
@@ -310,12 +305,7 @@ export function getValidLanguageCode(input) {
   }
 }
 
-async function aiCompletion(
-  prompt,
-  content,
-  responseFormat,
-  targetUid
-) {
+async function aiCompletion(prompt, content, responseFormat, targetUid) {
   let aiResponse = "";
 
   // Select the appropriate API based on the chosen provider

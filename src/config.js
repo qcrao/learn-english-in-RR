@@ -115,8 +115,19 @@ export function initPanelConfig(extensionAPI) {
         action: {
           type: "select",
           items: ["OpenAI", "Grok AI"],
+          initialValueFn: () => {
+            // Convert internal ID to display name
+            if (selectedAIProvider === "grok") return "Grok AI";
+            return "OpenAI";
+          },
           onChange: (value) => {
-            selectedAIProvider = value.toLowerCase().replace(" ai", "");
+            // Map display names to internal identifiers
+            const providerMap = {
+              OpenAI: "openai",
+              "Grok AI": "grok",
+            };
+
+            selectedAIProvider = providerMap[value] || "openai";
             extensionAPI.settings.set("ai-provider", selectedAIProvider);
           },
         },
