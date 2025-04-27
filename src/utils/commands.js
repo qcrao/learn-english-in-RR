@@ -203,17 +203,23 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
           }
 
           // Create the Anki card for this word
-          const success = await createAnkiCardFromBlock(blockContent);
+          const result = await createAnkiCardFromBlock(blockContent);
 
-          if (success) {
-            console.log(`Card ${i + 1} created successfully`);
+          if (result.success) {
+            console.log(`Card ${i + 1} created successfully: ${result.message}`);
             // Track successful cards by ID - store the tracking ID instead of the full ID
             if (!window._createdAnkiCards) window._createdAnkiCards = new Set();
             window._createdAnkiCards.add(trackingId);
             successfulCards++;
           } else {
-            console.log(`Card ${i + 1} creation failed`);
-            failedCards++;
+            // Check if it's a duplicate card
+            if (result.message.includes("duplicate")) {
+              console.log(`Card ${i + 1} is a duplicate`);
+              skippedCards++;
+            } else {
+              console.log(`Card ${i + 1} creation failed: ${result.message}`);
+              failedCards++;
+            }
           }
         } catch (cardError) {
           console.error(`Error processing card ${i + 1}:`, cardError);
@@ -242,7 +248,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
       } else {
         AppToaster.show({
           message:
-            "No Anki cards were created. Check format of your word entries.",
+            "No Anki cards were created.",
           intent: "warning",
           timeout: 3000,
         });

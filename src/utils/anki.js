@@ -7,7 +7,7 @@ import { ankiDeckName } from "../config";
  * Creates Anki cards from Roam Research word entries
  * @param {string} blockContent - The content of the Roam Research block
  * @param {string} customDeckName - The name of the Anki deck (optional, uses config if not provided)
- * @returns {Promise<boolean>} - Whether the operation was successful
+ * @returns {Promise<{success: boolean, message: string}>} - Result containing success status and message
  */
 export async function createAnkiCardFromBlock(blockContent, customDeckName) {
   const deckName = customDeckName || ankiDeckName;
@@ -75,7 +75,7 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       console.log(
         "This content has already been processed in this session, skipping"
       );
-      return false;
+      return { success: false, message: "Card has already been processed in this session" };
     }
 
     // Parse the content and extract word entries
@@ -95,11 +95,11 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
         intent: "warning",
         timeout: 3000,
       });
-      return false;
+      return { success: false, message: "No highlighted words found" };
     }
 
     // Create and send cards to Anki
-    const createdCards = await createAndSendCards(
+    const { createdCards, errors } = await createAndSendCards(
       contextSentence,
       allMatches,
       wordEntries,
@@ -111,15 +111,53 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
 
     // Show results notification
     if (createdCards > 0) {
-      return true;
+      if (errors.length > 0) {
+        // Some cards were created, but there were also errors
+        const errorMessage = errors.map(e => {
+          // Simplify duplicate error messages
+          if (e.error.includes("duplicate")) {
+            return `Card for "${e.word}" is a duplicate`;
+          }
+          return `Error for ${e.word}: ${e.error}`;
+        }).join("; ");
+        
+        AppToaster.show({
+          message: `Created ${createdCards} card(s). Some errors occurred: ${errorMessage}`,
+          intent: "warning",
+          timeout: 5000,
+        });
+        return { success: true, message: `Created ${createdCards} card(s). Some errors: ${errorMessage}` };
+      } else {
+        AppToaster.show({
+          message: `Successfully created ${createdCards} Anki card(s)!`,
+          intent: "success",
+          timeout: 3000,
+        });
+        return { success: true, message: `Successfully created ${createdCards} card(s)` };
+      }
+    } else if (errors.length > 0) {
+      // No cards were created, but there were errors
+      const errorMessage = errors.map(e => {
+        // Simplify duplicate error messages
+        if (e.error.includes("duplicate")) {
+          return `Card for "${e.word}" is a duplicate`;
+        }
+        return `Error for ${e.word}: ${e.error}`;
+      }).join("; ");
+      
+      AppToaster.show({
+        message: `Failed to create Anki cards: ${errorMessage}`,
+        intent: "danger",
+        timeout: 5000,
+      });
+      return { success: false, message: errorMessage };
     } else {
       AppToaster.show({
-        message:
-          "No cards were created. Check the format of your word entries.",
+        message: "No Anki cards were created.",
         intent: "warning",
         timeout: 3000,
       });
-      return false;
+      return { success: false, message: "No cards created" };
     }
   } catch (error) {
     console.error("Error creating Anki card:", error);
@@ -128,7 +166,7 @@ export async function createAnkiCardFromBlock(blockContent, customDeckName) {
       intent: "danger",
       timeout: 5000,
     });
-    return false;
+    return { success: false, message: error.message };
   }
 }
 
@@ -691,6 +729,7 @@ async function createAndSendCards(
   deckName
 ) {
   let createdCards = 0;
+  const errors = [];
   // Keep track of words we've already processed to avoid duplicates
   const processedWords = new Set();
 
@@ -723,16 +762,17 @@ async function createAndSendCards(
     const { front, back } = createCardContent(contextSentence, word, wordEntry);
 
     // Send to Anki Connect API
-    const success = await sendCardToAnki(front, back, deckName);
-    if (success) {
+    const result = await sendCardToAnki(front, back, deckName);
+    if (result.success) {
       createdCards++;
       console.log(`Successfully created card for: ${word}`);
     } else {
-      console.log(`Failed to create card for: ${word}`);
+      console.log(`Failed to create card for: ${word}: ${result.error}`);
+      errors.push({ word, error: result.error });
     }
   }
 
-  return createdCards;
+  return { createdCards, errors };
 }
 
 /**
@@ -876,12 +916,12 @@ async function sendCardToAnki(front, back, deckName) {
 
     if (response.data.error) {
       console.error(`Error creating card:`, response.data.error);
-      return false;
+      return { success: false, error: response.data.error };
     }
 
-    return true;
+    return { success: true };
   } catch (error) {
     console.error("Error sending card to Anki:", error);
-    return false;
+    return { success: false, error: error.message };
   }
 }
