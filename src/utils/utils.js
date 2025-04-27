@@ -407,7 +407,7 @@ export function processContent(parentUid, content) {
       basic.phonetic
     )} ${ensureBackticks(basic.partOfSpeech)} ${ensureBackticks(
       basic.motherLanguageTranslation
-    )} ${word.tags.map((tag) => `#${tag}`).join(" ")}`;
+    )}`;
     const topLevelUid = createChildBlock(parentUid, basicInfo, "last", true);
 
     // Create a child block for the definition

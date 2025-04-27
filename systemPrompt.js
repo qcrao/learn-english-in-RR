@@ -24,7 +24,6 @@ Provide the output in JSON format. The response MUST ALWAYS be an object with a 
         "partOfSpeech": "part of speech",
         "motherLanguageTranslation": "translation in mother language"
       },
-      "tags": ["new-words", "frequently-used-phrases"],
       "definition": "English explanation, using ^^Word/Phrase^^ in the explanation",
       "examples": [
         "Example sentence 1, using ^^Word/Phrase^^",
@@ -61,13 +60,12 @@ For each marked word or phrase, provide the following information:
      - Ensure that all phonemes are correctly represented, including subtle distinctions.
    - partOfSpeech: Use abbreviations (e.g., adj, noun, verb, phrase, etc.).
    - motherLanguageTranslation: A concise and clear translation in the user's mother language.
-2. tags: Include "new-words" for all new words or phrases, and "frequently-used-phrases" if applicable.Only add the #frequently-used-phrases tag for common phrases, idioms, and fixed expressions (e.g., "in terms of", "by all means"). Never add this tag for single words, even if they are commonly used.
-3. definition: A brief English explanation describing the meaning and usage context.
-4. examples: Provide 3 example sentences from different scenarios.
-5. synonyms: List 2-3 synonyms with their phonetic transcription, partOfSpeech and mother language translation.
-6. antonyms: List 2-3 antonyms with their phonetic transcription, partOfSpeech and mother language translation.
-7. etymology: Briefly explain the word's origin or formation.
-8. usageNotes: Provide suggestions on using the word or phrase in various contexts.
+2. definition: A brief English explanation describing the meaning and usage context.
+3. examples: Provide 3 example sentences from different scenarios.
+4. synonyms: List 2-3 synonyms with their phonetic transcription, partOfSpeech and mother language translation.
+5. antonyms: List 2-3 antonyms with their phonetic transcription, partOfSpeech and mother language translation.
+6. etymology: Briefly explain the word's origin or formation.
+7. usageNotes: Provide suggestions on using the word or phrase in various contexts.
 
 ## Additional Instructions
 
