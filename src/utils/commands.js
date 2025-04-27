@@ -155,7 +155,7 @@ export const loadRoamExtensionCommands = async (extensionAPI) => {
           }
 
           // Simplified ID for tracking (without timestamp)
-          const trackingId = `${uid}_${i}_${wordToTrack}`;
+          const trackingId = `${uid}_${i}_${wordToTrack}_${cardTime}`;
           console.log(`Tracking ID for this card: ${trackingId}`);
 
           // Skip if we've already processed this card in this session

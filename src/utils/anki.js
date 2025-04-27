@@ -868,7 +868,7 @@ async function sendCardToAnki(front, back, deckName) {
             Back: back + css,
           },
           options: {
-            allowDuplicate: true,
+            allowDuplicate: false,
           },
         },
       },
