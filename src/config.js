@@ -17,7 +17,13 @@ export let defaultGrokModel = "grok-3-mini-beta";
 export let selectedAIProvider = "openai";
 export let streamResponse = true;
 export let motherLanguage = "zh";
-export let ankiDeckName;
+export let ankiDeckName = "English Vocabulary in RR";
+
+// Define the provider mapping
+const providerMap = {
+  "OpenAI": "openai",
+  "xAI": "xAI"
+};
 
 export function loadInitialSettings(extensionAPI) {
   // OpenAI settings
@@ -122,7 +128,6 @@ export function initPanelConfig(extensionAPI) {
           },
           onChange: (value) => {
             // Map display names to internal identifiers
-
             selectedAIProvider = providerMap[value] || "openai";
             extensionAPI.settings.set("ai-provider", selectedAIProvider);
           },
