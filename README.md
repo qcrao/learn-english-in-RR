@@ -12,6 +12,7 @@ Recommendation: create a new Roam graph for learning English.
 
    - Extract new words or phrases from your Roam blocks, new words should be highlighted with `^^` (e.g., `^^unpretentious^^`)
    - Get detailed explanations including phonetics, definitions, examples, synonyms, antonyms, etymology, and usage notes
+   - **NEW: Incremental Extraction** - Extract only new words from a block that contains previously extracted words
 
 2. **Text-to-Speech**
 
@@ -25,10 +26,16 @@ Recommendation: create a new Roam graph for learning English.
 
 4. **AI-Powered Explanations**
 
-   - Utilizes OpenAI's GPT models for comprehensive word explanations
-   - Customizable AI model selection
+   - Choose between OpenAI and xAI (Grok) for comprehensive word explanations
+   - OpenAI uses gpt-4o-mini model
+   - xAI uses grok-3-mini-beta model
 
-5. **Interactive UI**
+5. **Anki Integration**
+
+   - **NEW: Send to Anki** - Export your vocabulary directly to Anki for spaced repetition practice
+   - Customizable Anki deck name
+
+6. **Interactive UI**
    - Speech icons automatically added to highlighted text
    - Context menu integration for quick access to features
 
@@ -43,16 +50,18 @@ After installation, configure the extension in the Roam Research settings panel:
 
 1. **Voice Selection**: Choose your preferred voice for text-to-speech (Nicky, Aaron, or Junior)
 2. **Mother Language**: Set your native language code (e.g., zh for Chinese, en for English)
-3. **Stream Response**: Toggle streaming responses from GPT models
-4. **OpenAI Model**: Select the AI model for explanations (e.g., gpt-4o-mini, gpt-3.5-turbo)
-5. **OpenAI API Key**: Enter your OpenAI API key for GPT model access
+3. **Anki Deck Name**: Set the name of your Anki deck for vocabulary export
+4. **Stream Response**: Toggle streaming responses from AI models
+5. **AI Provider**: Choose between OpenAI and xAI (Grok)
+6. **OpenAI API Key**: Enter your OpenAI API key (uses gpt-4o-mini model)
+7. **xAI API Key**: Enter your xAI API key (uses grok-3-mini-beta model)
 
 ## Usage
 
 ### 1. **Customizing Explanations**
 
 - Adjust the mother language in settings for translations in your native language
-- Change the OpenAI model for different levels of explanation detail
+- Choose your preferred AI provider for different explanation styles
 
 ### 2. **Active the block**
 
@@ -79,11 +88,26 @@ After installation, configure the extension in the Roam Research settings panel:
 
 ![command palette](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/cmd+p.jpg?raw=true)
 
-### 4. **Text-to-Speech**
+### 4. **Incremental Extraction**
+
+- If a block already contains extracted words and you add new highlighted words
+- The extension will only process newly highlighted words, preserving previous explanations
+
+TODO: Add screenshot or GIF of incremental extraction
+
+### 5. **Text-to-Speech**
 
 ![new words](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/new_words.jpg?raw=true)
 
 - Hover over any highlighted text or the icon to hear the pronunciation
+
+### 6. **Send to Anki**
+
+- After extracting words, use the "Send to Anki" feature to create flashcards
+- Cards will be added to your specified Anki deck
+- Make sure Anki is running with AnkiConnect plugin installed
+
+TODO: Add screenshot or GIF of Anki integration
 
 ---
 
@@ -93,7 +117,8 @@ After installation, configure the extension in the Roam Research settings panel:
 
 - Use the extension regularly to build your vocabulary within your Roam graph
 - Combine with other Roam features like daily notes and spaced repetition for effective learning
-- Experiment with different AI models to find the best balance of speed and detail for your needs
+- Use the Anki integration for additional spaced repetition practice outside of Roam
+- Compare explanations from different AI providers to get diverse perspectives
 
 ## Support
 
