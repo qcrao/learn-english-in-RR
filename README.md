@@ -6,6 +6,12 @@ Recommendation: create a new Roam graph for learning English.
 
 ![extract new words](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/extract-new-words.gif?raw=true)
 
+> You can also use shortcut(you can change the hotkey in the settings) to extract new words.
+
+![send to Anki](https://github.com/qcrao/learn-english-in-RR/blob/main/assets/send-to-Anki.png?raw=true)
+
+[👍send to Anki video](https://youtu.be/fy0TJJndkOU)
+
 ## Features
 
 1. **Word Extraction and Explanation**
