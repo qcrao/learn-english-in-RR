@@ -731,6 +731,7 @@ export async function deepseekCompletion(prompt, content, targetUid) {
         }
       } catch (e) {
         console.error("Error during DeepSeek stream response: ", e);
+        removeSpinner(intervalId);
         return "";
       } finally {
         if (streamElementFound && !isCanceledStreamGlobal) {
