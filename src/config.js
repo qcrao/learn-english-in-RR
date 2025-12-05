@@ -2,6 +2,7 @@ import {
   getValidLanguageCode,
   initializeOpenAIAPI,
   initializeGrokAPI,
+  initializeDeepSeekAPI,
 } from "./ai/commands";
 
 export let selectedVoiceName = "Nicky";
@@ -14,6 +15,10 @@ export let grokClient;
 export let GROK_API_KEY = "";
 export let defaultGrokModel = "grok-3-mini-beta";
 
+export let deepseekClient;
+export let DEEPSEEK_API_KEY = "";
+export let defaultDeepSeekModel = "deepseek-chat";
+
 export let selectedAIProvider = "openai";
 export let streamResponse = true;
 export let motherLanguage = "zh";
@@ -22,7 +27,8 @@ export let ankiDeckName = "English Vocabulary in RR";
 // Define the provider mapping
 const providerMap = {
   "OpenAI": "openai",
-  "xAI": "xAI"
+  "xAI": "xAI",
+  "DeepSeek": "deepseek"
 };
 
 export function loadInitialSettings(extensionAPI) {
@@ -33,6 +39,10 @@ export function loadInitialSettings(extensionAPI) {
   // Grok settings
   GROK_API_KEY = extensionAPI.settings.get("grok-api-key");
   grokClient = initializeGrokAPI(GROK_API_KEY);
+
+  // DeepSeek settings
+  DEEPSEEK_API_KEY = extensionAPI.settings.get("deepseek-api-key");
+  deepseekClient = initializeDeepSeekAPI(DEEPSEEK_API_KEY);
 
   // General settings
   selectedAIProvider = extensionAPI.settings.get("ai-provider");
@@ -120,10 +130,11 @@ export function initPanelConfig(extensionAPI) {
         description: "Choose the AI service provider",
         action: {
           type: "select",
-          items: ["OpenAI", "xAI"],
+          items: ["OpenAI", "xAI", "DeepSeek"],
           initialValueFn: () => {
             // Convert internal ID to display name
             if (selectedAIProvider === "xAI") return "xAI";
+            if (selectedAIProvider === "deepseek") return "DeepSeek";
             return "OpenAI";
           },
           onChange: (value) => {
@@ -176,6 +187,28 @@ export function initPanelConfig(extensionAPI) {
             setTimeout(() => {
               GROK_API_KEY = evt.target.value;
               grokClient = initializeGrokAPI(GROK_API_KEY);
+            }, 200);
+          },
+        },
+      },
+      {
+        id: "deepseek-api-key",
+        name: "DeepSeek API Key",
+        description: (
+          <>
+            <span>Enter your DeepSeek API key (using deepseek-chat model)</span>
+            <br></br>
+            <a href="https://platform.deepseek.com/api_keys" target="_blank">
+              (Get an API key from DeepSeek)
+            </a>
+          </>
+        ),
+        action: {
+          type: "input",
+          onChange: (evt) => {
+            setTimeout(() => {
+              DEEPSEEK_API_KEY = evt.target.value;
+              deepseekClient = initializeDeepSeekAPI(DEEPSEEK_API_KEY);
             }, 200);
           },
         },

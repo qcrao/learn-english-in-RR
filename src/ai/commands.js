@@ -6,9 +6,12 @@ import {
   streamResponse,
   GROK_API_KEY,
   grokClient,
+  DEEPSEEK_API_KEY,
+  deepseekClient,
   selectedAIProvider,
   defaultOpenAIModel,
   defaultGrokModel,
+  defaultDeepSeekModel,
 } from "../config";
 import {
   displaySpinner,
@@ -32,6 +35,8 @@ export const tokensLimit = {
   "grok-1": 128000,
   "grok-3-beta": 128000,
   "grok-3-mini-beta": 128000,
+  "deepseek-chat": 64000,
+  "deepseek-reasoner": 64000,
   custom: undefined,
 };
 
@@ -122,10 +127,12 @@ export const insertCompletion = async (
     return;
   }
 
-  // model should be grok-3-mini-beta or gpt-4o-mini
+  // model should be grok-3-mini-beta or gpt-4o-mini or deepseek-chat
   let model = "gpt-4o-mini";
   if (selectedAIProvider === "xAI") {
     model = "grok-3-mini-beta";
+  } else if (selectedAIProvider === "deepseek") {
+    model = "deepseek-chat";
   }
 
   content = await verifyTokenLimitAndTruncate(model, prompt, updatedContent);
@@ -341,6 +348,18 @@ async function aiCompletion(prompt, content, responseFormat, targetUid) {
       }
       break;
 
+    case "deepseek":
+      if (DEEPSEEK_API_KEY && DEEPSEEK_API_KEY !== "") {
+        aiResponse = await deepseekCompletion(prompt, content, targetUid);
+      } else {
+        AppToaster.show({
+          message: `Provide a DeepSeek API key to use ${defaultDeepSeekModel} model. See settings.`,
+          intent: "warning",
+          timeout: 15000,
+        });
+      }
+      break;
+
     default:
       AppToaster.show({
         message: `Unknown AI provider: ${selectedAIProvider}. Please select a valid provider in settings.`,
@@ -417,6 +436,30 @@ export function initializeGrokAPI(API_KEY) {
     console.log(error.message);
     AppToaster.show({
       message: `Learn English in RR - Error with xAI API key: ${error.message}`,
+      intent: "warning",
+    });
+    return null;
+  }
+}
+
+export function initializeDeepSeekAPI(API_KEY) {
+  try {
+    if (!API_KEY || API_KEY === "") {
+      return null;
+    }
+
+    // Initialize DeepSeek client using OpenAI SDK with DeepSeek baseURL
+    const deepseekClient = new OpenAI({
+      apiKey: API_KEY,
+      baseURL: "https://api.deepseek.com",
+      dangerouslyAllowBrowser: true,
+    });
+
+    return deepseekClient;
+  } catch (error) {
+    console.log(error.message);
+    AppToaster.show({
+      message: `Learn English in RR - Error with DeepSeek API key: ${error.message}`,
       intent: "warning",
     });
     return null;
@@ -631,6 +674,91 @@ export async function grokCompletion(prompt, content, targetUid) {
     console.error("xAI error:", error);
     AppToaster.show({
       message: `xAI error: ${error.message}`,
+      timeout: 15000,
+      intent: "danger",
+    });
+    return respStr;
+  }
+}
+
+export async function deepseekCompletion(prompt, content, targetUid) {
+  let respStr = "";
+
+  console.log("Using DeepSeek model:", defaultDeepSeekModel);
+  console.log("DeepSeek prompt:", prompt);
+  console.log("DeepSeek content:", content);
+
+  try {
+    if (!deepseekClient) {
+      throw new Error("DeepSeek API client not initialized");
+    }
+
+    const messages = [
+      { role: "system", content: prompt },
+      { role: "user", content: content },
+    ];
+
+    const intervalId = await displaySpinner(targetUid);
+
+    if (streamResponse) {
+      // Handle streaming response with OpenAI client
+      const streamElt = insertParagraphForStream(targetUid);
+      let streamElementFound =
+        streamElt && !streamElt.classList.contains("placeholder");
+
+      const response = await deepseekClient.chat.completions.create({
+        model: defaultDeepSeekModel,
+        messages: messages,
+        stream: true,
+        temperature: 0.7,
+      });
+
+      // Process streaming response
+      try {
+        for await (const chunk of response) {
+          if (isCanceledStreamGlobal) {
+            if (streamElementFound) {
+              streamElt.innerHTML += "(⚠️ stream interrupted by user)";
+            }
+            break;
+          }
+          const content = chunk.choices[0]?.delta?.content || "";
+          respStr += content;
+
+          if (streamElementFound) {
+            streamElt.innerHTML += content;
+          }
+        }
+      } catch (e) {
+        console.error("Error during DeepSeek stream response: ", e);
+        return "";
+      } finally {
+        if (streamElementFound && !isCanceledStreamGlobal) {
+          streamElt.remove();
+        }
+
+        if (isCanceledStreamGlobal) {
+          console.log("DeepSeek response stream interrupted.");
+        }
+      }
+    } else {
+      // Non-streaming response
+      const response = await deepseekClient.chat.completions.create({
+        model: defaultDeepSeekModel,
+        messages: messages,
+        stream: false,
+        temperature: 0.7,
+      });
+
+      respStr = response.choices[0].message.content;
+    }
+
+    removeSpinner(intervalId);
+    return respStr;
+  } catch (error) {
+    console.error("DeepSeek error:", error);
+    AppToaster.show({
+      message: `DeepSeek error: ${error.message}`,
       timeout: 15000,
       intent: "danger",
     });
